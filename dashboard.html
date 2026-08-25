@@ -1,0 +1,3560 @@
+<title>Nodeframe Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plane:#0a0f0d;
+    --surface:#111815;
+    --surface-2:#17211c;
+    --border:rgba(190,215,200,0.12);
+    --border-strong:rgba(190,215,200,0.22);
+    --ink:#f2efe6;
+    --ink-secondary:#a3ad9f;
+    --ink-muted:#69746c;
+    --copper:#d97a3f;
+    --copper-strong:#f0925a;
+    --teal:#2bd6a4;
+    --good:#35c26b;
+    --warning:#f0b429;
+    --critical:#e2564e;
+    --series-1:#3987e5;
+    --series-2:#d97a3f;
+    --series-3:#2bd6a4;
+    --series-4:#c98500;
+    --series-5:#d55181;
+    --series-6:#9085e9;
+    --series-7:#e66767;
+    --series-8:#6da7ec;
+    --font-display: Archivo, "Arial Black", sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --radius-s:6px;
+    --radius-m:8px;
+    --radius-l:10px;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--plane);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--copper); color:var(--plane); }
+
+  a{ color:var(--teal); }
+
+  .wrap{
+    max-width:1440px;
+    margin:0 auto;
+    padding:0 24px 64px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,15,13,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar-inner{
+    max-width:1440px; margin:0 auto;
+    padding:14px 24px;
+    display:flex; align-items:center; gap:20px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    margin-right:8px;
+  }
+  .brand-mark{
+    width:30px;height:30px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius-s);
+    color:var(--copper);
+    flex:none;
+  }
+  .brand-word{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:18px;
+    letter-spacing:-0.02em;
+    color:var(--ink);
+  }
+  .topbar-divider{
+    width:1px; height:24px; background:var(--border-strong);
+    flex:none;
+  }
+  .hub-info{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    color:var(--ink-secondary);
+    font-family:var(--font-mono);
+    font-size:12px;
+  }
+  .hub-name{
+    font-family:var(--font-body); font-weight:600;
+    color:var(--ink); font-size:13px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 8px;
+    border:1px solid var(--border-strong);
+    border-radius:999px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.02em;
+    color:var(--ink-secondary);
+    white-space:nowrap;
+  }
+  .chip b{ color:var(--ink); font-weight:500; }
+  .topbar-right{
+    margin-left:auto;
+    display:flex; align-items:center; gap:14px;
+    flex-wrap:wrap;
+  }
+  .live-clock{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--ink);
+    display:flex; align-items:center; gap:8px;
+    letter-spacing:0.02em;
+  }
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 0 3px rgba(43,214,164,0.18);
+  }
+  .live-dot.animate{ animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.45; transform:scale(0.75); }
+  }
+  .clock-date{ color:var(--ink-muted); font-size:11px; }
+
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px 5px 8px;
+    border-radius:999px;
+    border:1px solid var(--border-strong);
+    font-family:var(--font-mono);
+    font-size:11px; font-weight:500;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .status-pill svg{ flex:none; }
+  .status-pill.s-good{ color:var(--good); border-color:rgba(53,194,107,0.35); background:rgba(53,194,107,0.08); }
+  .status-pill.s-warning{ color:var(--warning); border-color:rgba(240,180,41,0.35); background:rgba(240,180,41,0.08); }
+  .status-pill.s-critical{ color:var(--critical); border-color:rgba(226,86,78,0.4); background:rgba(226,86,78,0.1); }
+  .status-pill.s-info{ color:var(--teal); border-color:rgba(43,214,164,0.3); background:rgba(43,214,164,0.07); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:36px; }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:12px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .section-title{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:13px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink);
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-title .num{
+    font-family:var(--font-mono); color:var(--ink-muted); font-weight:400;
+  }
+  .section-sub{
+    color:var(--ink-muted);
+    font-size:12px;
+    font-family:var(--font-mono);
+  }
+
+  /* ---------- Stat tiles ---------- */
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .stat-tile{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-l);
+    padding:16px 18px;
+    display:flex; flex-direction:column; gap:6px;
+    min-width:0;
+  }
+  .stat-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-muted);
+    font-family:var(--font-mono);
+  }
+  .stat-value-row{
+    display:flex; align-items:baseline; gap:8px;
+    flex-wrap:wrap;
+  }
+  .stat-value{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:32px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  .stat-unit{
+    font-family:var(--font-mono);
+    color:var(--ink-secondary);
+    font-size:13px;
+  }
+  .stat-caption{
+    font-size:12px; color:var(--ink-secondary);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .stat-caption .dot{ width:6px;height:6px;border-radius:50%; display:inline-block; }
+
+  /* ---------- Module grid ---------- */
+  .module-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(330px, 1fr));
+    gap:14px;
+  }
+  .module-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-l);
+    padding:16px 18px 14px;
+    display:flex; flex-direction:column; gap:12px;
+    position:relative;
+    transition:border-color 0.15s ease, background 0.15s ease;
+  }
+  .module-card:hover{ border-color:var(--border-strong); background:var(--surface-2); }
+  .module-card-head{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  }
+  .module-id{
+    display:flex; align-items:center; gap:8px;
+  }
+  .slot-badge{
+    font-family:var(--font-mono);
+    font-size:11px; font-weight:500;
+    color:var(--ink);
+    background:var(--surface-2);
+    border:1px solid var(--border-strong);
+    border-radius:4px;
+    padding:2px 6px;
+    flex:none;
+  }
+  .module-name{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--ink);
+  }
+  .module-chip{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ink-muted);
+  }
+  .module-meta{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .official-tag{
+    font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-muted);
+    border:1px solid var(--border); border-radius:3px; padding:1px 4px;
+    white-space:nowrap;
+  }
+
+  .module-readout{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+  }
+  .readout-value{
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    font-weight:500;
+    font-size:26px;
+    color:var(--ink);
+  }
+  .readout-unit{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--ink-secondary);
+  }
+  .readout-secondary{
+    margin-left:auto;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--ink-secondary);
+    text-align:right;
+  }
+  .readout-secondary b{
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    font-weight:500;
+  }
+
+  .chart-block{ position:relative; }
+  .chart-title{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    margin-bottom:4px;
+  }
+  .chart-pair{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .chart-container{
+    position:relative;
+    width:100%;
+    height:108px;
+  }
+  .chart-container.tall{ height:118px; }
+  .chart-svg{
+    width:100%; height:100%; display:block;
+    touch-action:none;
+    cursor:crosshair;
+  }
+  .chart-svg:focus{ outline:none; }
+  .chart-svg:focus-visible{ outline:1px solid var(--teal); outline-offset:2px; }
+  .gridline{ stroke:var(--border); stroke-width:1; shape-rendering:crispEdges; }
+  .threshold-line{ stroke-width:1; stroke-dasharray:3 3; opacity:0.75; }
+  .threshold-label{ font-family:var(--font-mono); font-size:8.5px; opacity:0.95; paint-order:stroke fill; stroke:var(--surface); stroke-width:3px; stroke-linejoin:round; }
+  .chart-area{ opacity:0.1; stroke:none; }
+  .chart-line{ fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .chart-marker{ r:5; stroke:var(--surface); stroke-width:2; }
+  .chart-crosshair{ stroke:var(--ink-muted); stroke-width:1; display:none; }
+  .chart-hoverdot{ r:4.5; fill:var(--ink); stroke:var(--surface); stroke-width:2; display:none; }
+  .chart-hit{ fill:transparent; }
+  .chart-tooltip{
+    position:absolute;
+    pointer-events:none;
+    transform:translate(-50%,-115%);
+    background:var(--surface-2);
+    border:1px solid var(--border-strong);
+    border-radius:6px;
+    padding:6px 9px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    white-space:nowrap;
+    z-index:5;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+  .tt-value{ color:var(--ink); font-weight:500; font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .tt-time{ color:var(--ink-muted); font-size:10px; margin-top:1px; }
+
+  .module-footer{
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:var(--font-mono); font-size:10.5px; color:var(--ink-muted);
+    padding-top:2px; border-top:1px solid var(--border);
+    margin-top:2px;
+  }
+
+  /* ---------- Access control scan list ---------- */
+  .scan-list{
+    display:flex; flex-direction:column;
+    max-height:190px; overflow-y:auto;
+    border:1px solid var(--border);
+    border-radius:var(--radius-s);
+  }
+  .scan-row{
+    display:grid;
+    grid-template-columns:56px 1fr auto;
+    align-items:center; gap:8px;
+    padding:6px 10px;
+    border-bottom:1px solid var(--border);
+    font-size:12px;
+  }
+  .scan-row:last-child{ border-bottom:none; }
+  .scan-time{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-muted); }
+  .scan-user{ min-width:0; }
+  .scan-name{ color:var(--ink); font-weight:500; font-size:12px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .scan-uid{ font-family:var(--font-mono); color:var(--ink-muted); font-size:9.5px; display:block; }
+  .scan-flag{
+    display:inline-flex; align-items:center; gap:4px;
+    font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase;
+    padding:2px 6px; border-radius:4px; white-space:nowrap;
+  }
+  .scan-flag.ok{ color:var(--good); background:rgba(53,194,107,0.1); }
+  .scan-flag.denied{ color:var(--critical); background:rgba(226,86,78,0.12); }
+
+  /* ---------- Event log ---------- */
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-l);
+    padding:16px 18px;
+  }
+  .log-list{
+    display:flex; flex-direction:column;
+    max-height:420px; overflow-y:auto;
+  }
+  .log-row{
+    display:grid;
+    grid-template-columns:20px 84px 130px 1fr;
+    gap:12px;
+    align-items:start;
+    padding:10px 4px;
+    border-bottom:1px solid var(--border);
+  }
+  .log-row:last-child{ border-bottom:none; }
+  .log-sev{ margin-top:2px; }
+  .log-time{ font-family:var(--font-mono); font-size:11px; color:var(--ink-muted); white-space:nowrap; }
+  .log-time .ago{ display:block; color:var(--ink-secondary); font-size:10px; margin-top:1px; }
+  .log-module{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .log-module-name{ font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--ink); }
+  .log-type{ font-family:var(--font-mono); font-size:9px; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-muted); }
+  .log-msg{ color:var(--ink-secondary); font-size:12.5px; line-height:1.45; }
+  .log-row.sev-critical .log-msg{ color:var(--ink); }
+
+  /* ---------- Marketplace ---------- */
+  .market-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+    gap:12px;
+  }
+  .market-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-m);
+    padding:14px 16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .market-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .market-name{ font-family:var(--font-body); font-weight:600; font-size:14px; color:var(--ink); }
+  .market-chip{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-muted); margin-top:2px; }
+  .market-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+  .badge{
+    font-family:var(--font-mono); font-size:9px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:2px 6px; border-radius:3px; border:1px solid var(--border-strong); color:var(--ink-secondary);
+  }
+  .badge.official{ color:var(--copper); border-color:rgba(217,122,63,0.4); background:rgba(217,122,63,0.08); }
+  .badge.community{ color:var(--teal); border-color:rgba(43,214,164,0.3); background:rgba(43,214,164,0.06); }
+  .market-desc{ color:var(--ink-secondary); font-size:12px; line-height:1.5; flex:1; }
+  .market-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .market-meta{ display:flex; flex-direction:column; gap:2px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-muted); }
+  .market-meta b{ color:var(--ink-secondary); font-weight:500; }
+  .btn{
+    font-family:var(--font-mono);
+    font-size:11px; font-weight:500; letter-spacing:0.03em;
+    text-transform:uppercase;
+    padding:7px 12px;
+    border-radius:6px;
+    border:1px solid var(--border-strong);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+    transition:border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    white-space:nowrap;
+  }
+  .btn:hover{ border-color:var(--copper); color:var(--copper-strong); background:rgba(217,122,63,0.08); }
+  .btn:focus-visible{ outline:1px solid var(--teal); outline-offset:2px; }
+  .btn.installed{
+    color:var(--good);
+    border-color:rgba(53,194,107,0.35);
+    background:rgba(53,194,107,0.08);
+    cursor:default;
+  }
+  .btn.installed:hover{ color:var(--good); background:rgba(53,194,107,0.08); border-color:rgba(53,194,107,0.35); }
+  .btn.installed[disabled]{ opacity:1; }
+
+  footer.site-foot{
+    margin-top:44px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-muted);
+  }
+
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap;
+  }
+
+  @media (max-width:900px){
+    .stat-row{ grid-template-columns:repeat(2,1fr); }
+    .log-row{ grid-template-columns:16px 1fr; }
+    .log-time{ order:3; }
+    .log-module{ order:2; }
+    .log-msg{ order:4; grid-column:2/3; }
+  }
+  @media (max-width:560px){
+    .stat-row{ grid-template-columns:1fr; }
+    .chart-pair{ grid-template-columns:1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:0.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:0.001ms !important;
+      scroll-behavior:auto !important;
+    }
+  }
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/><circle cx="5" cy="5" r="1.1" fill="currentColor"/><circle cx="11" cy="5" r="1.1" fill="currentColor"/><circle cx="5" cy="11" r="1.1" fill="currentColor"/><circle cx="11" cy="11" r="1.1" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-word">NODEFRAME</span>
+    </div>
+    <div class="topbar-divider" aria-hidden="true"></div>
+    <div class="hub-info">
+      <span class="hub-name" id="hubName">Nodeframe Core Hub</span>
+      <span class="chip" id="fwChip">FW <b>v2.4.1</b></span>
+      <span class="chip" id="slotsChip">SLOTS <b>8/8</b></span>
+    </div>
+    <div class="topbar-right">
+      <span class="status-pill" id="systemStatusPill"></span>
+      <span class="live-clock">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="clockTime">--:--:--</span>
+        <span class="clock-date" id="clockDate"></span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section id="statsSection" aria-label="System summary">
+    <div class="stat-row" id="statRow"></div>
+  </section>
+
+  <section aria-labelledby="modulesHeading">
+    <div class="section-head">
+      <div class="section-title" id="modulesHeading">Modules <span class="num" id="moduleCountLabel"></span></div>
+      <div class="section-sub">Slots A1&ndash;A4 &middot; B1&ndash;B3 &middot; C1 &mdash; one shared I2C / analog / digital bus per slot</div>
+    </div>
+    <div class="module-grid" id="moduleGrid"></div>
+  </section>
+
+  <section aria-labelledby="logHeading">
+    <div class="section-head">
+      <div class="section-title" id="logHeading">Activity Log</div>
+      <div class="section-sub" id="logSub"></div>
+    </div>
+    <div class="panel">
+      <div class="log-list" id="logList"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="marketHeading">
+    <div class="section-head">
+      <div class="section-title" id="marketHeading">Plugin Marketplace <span class="num" id="marketCountLabel"></span></div>
+      <div class="section-sub">New sensor type = one manifest row, not a firmware rewrite</div>
+    </div>
+    <div class="market-grid" id="marketGrid"></div>
+  </section>
+
+  <footer class="site-foot">
+    <span>Nodeframe &middot; MIT licensed</span>
+    <span id="footStamp"></span>
+  </footer>
+
+</div>
+
+<script>
+const SEED = {
+  "generated_at": "2026-08-21T09:42:00Z",
+  "core": {
+    "name": "Nodeframe Core Hub",
+    "firmware": "v2.4.1",
+    "uptime_hours": 214,
+    "slots_total": 8,
+    "slots_used": 8
+  },
+  "modules": [
+    {
+      "id": "mod-climate-01",
+      "slug": "ambient-climate",
+      "label": "Ambient Climate",
+      "slot": "A1",
+      "sensor_chip": "DHT11",
+      "metric_key": "temperature",
+      "unit": "\u00b0C",
+      "secondary_metric_key": "humidity",
+      "secondary_unit": "%RH",
+      "author": "nodeframe-core",
+      "official": true,
+      "thresholds": {
+        "warn_above": 29,
+        "crit_above": 33
+      },
+      "status": "good",
+      "latest": 22.82,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 24.45,
+          "v2": 47.79
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 25.07,
+          "v2": 50.03
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 25.62,
+          "v2": 48.53
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 26.25,
+          "v2": 51.06
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 26.4,
+          "v2": 52.43
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 26.75,
+          "v2": 54.44
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 26.92,
+          "v2": 53.72
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 26.28,
+          "v2": 52.69
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 26.32,
+          "v2": 55.57
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 25.81,
+          "v2": 53.72
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 25.44,
+          "v2": 51.72
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 24.54,
+          "v2": 53.46
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 24.35,
+          "v2": 51.79
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 23.6,
+          "v2": 51.43
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 23.25,
+          "v2": 48.72
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 22.79,
+          "v2": 47.08
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 21.45,
+          "v2": 46.97
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 21.98,
+          "v2": 47.57
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 22.64,
+          "v2": 43.93
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 22.97,
+          "v2": 43.17
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 23.06,
+          "v2": 43.15
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 23.65,
+          "v2": 43.79
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 24.42,
+          "v2": 42.73
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 25.03,
+          "v2": 42.62
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 25.18,
+          "v2": 41.16
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 25.75,
+          "v2": 42.82
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 26.24,
+          "v2": 45.46
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 26.31,
+          "v2": 41.99
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 26.97,
+          "v2": 45.85
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 26.81,
+          "v2": 46.13
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 26.9,
+          "v2": 46.12
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 25.53,
+          "v2": 46.76
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 25.87,
+          "v2": 46.86
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 24.97,
+          "v2": 50.07
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 24.24,
+          "v2": 51.74
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 23.95,
+          "v2": 54.64
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 23.42,
+          "v2": 51.96
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 22.57,
+          "v2": 52.34
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 22.79,
+          "v2": 53.1
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 22.29,
+          "v2": 54.88
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 22.08,
+          "v2": 53.6
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 21.88,
+          "v2": 52.39
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 22.67,
+          "v2": 53.7
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 23.75,
+          "v2": 52.48
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 23.99,
+          "v2": 51.82
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 24.88,
+          "v2": 51.68
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 25.2,
+          "v2": 48.27
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 25.98,
+          "v2": 48.76
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 26.56,
+          "v2": 47.07
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 27.16,
+          "v2": 45.52
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 27.22,
+          "v2": 45.01
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 26.51,
+          "v2": 42.56
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 26.49,
+          "v2": 44.84
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 26.52,
+          "v2": 43.36
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 24.96,
+          "v2": 43.0
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 25.45,
+          "v2": 41.34
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 24.43,
+          "v2": 42.09
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 24.65,
+          "v2": 41.15
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 23.32,
+          "v2": 44.59
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 22.82,
+          "v2": 43.27
+        }
+      ],
+      "connected_at": "2026-08-09T09:42:00Z"
+    },
+    {
+      "id": "mod-gas-01",
+      "slug": "gas-level",
+      "label": "Gas Level",
+      "slot": "A2",
+      "sensor_chip": "MQ-6 (LPG/Propane)",
+      "metric_key": "gas_ppm",
+      "unit": "ppm",
+      "author": "nodeframe-core",
+      "official": true,
+      "thresholds": {
+        "warn_above": 400,
+        "crit_above": 650
+      },
+      "status": "good",
+      "latest": 207.0,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 159.8
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 191.17
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 209.33
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 217.97
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 218.71
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 216.77
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 225.75
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 177.7
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 176.73
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 147.53
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 168.36
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 148.98
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 146.76
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 148.61
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 159.2
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 180.4
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 197.63
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 189.32
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 227.47
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 229.62
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 205.68
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 200.61
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 197.07
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 162.64
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 160.04
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 159.87
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 139.21
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 133.98
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 135.46
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 200.0
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 172.42
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 185.85
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 203.67
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 217.37
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 221.51
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 225.4
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 196.13
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 183.74
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 172.54
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 161.01
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 139.48
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 133.87
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 161.66
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 136.96
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 171.72
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 183.81
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 192.21
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 202.45
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 236.98
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 240.54
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 202.4
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 197.65
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 193.02
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 150.41
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 158.47
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 720
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 531.0
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 369.0
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 261.0
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 207.0
+        }
+      ],
+      "connected_at": "2026-08-13T09:42:00Z"
+    },
+    {
+      "id": "mod-proximity-01",
+      "slug": "proximity",
+      "label": "Proximity",
+      "slot": "A3",
+      "sensor_chip": "HC-SR04",
+      "metric_key": "distance_cm",
+      "unit": "cm",
+      "author": "nodeframe-core",
+      "official": true,
+      "thresholds": {
+        "warn_below": 30,
+        "crit_below": 12
+      },
+      "status": "good",
+      "latest": 106.95,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 156.99
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 185.07
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 203.27
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 198.41
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 183.83
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 154.26
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 112.98
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 91.87
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 72.09
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 113.52
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 157.93
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 186.9
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 204.31
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 199.21
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 174.51
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 136.85
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 113.26
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 88.26
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 88.07
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 103.86
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 137.37
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 185.35
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 213.45
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 189.09
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 180.54
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 145.45
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 95.62
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 99.55
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 89.37
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 103.34
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 140.73
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 168.03
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 204.51
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 190.54
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 175.09
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 145.43
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 110.29
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 90.66
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 87.68
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 106.91
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 144.0
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 182.63
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 184.3
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 204.67
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 177.58
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 144.47
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 94.13
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 87.17
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 90.66
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 110.99
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 150.26
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 174.06
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 211.76
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 198.34
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 178.26
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 143.92
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 119.92
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 93.7
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 81.54
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 106.95
+        }
+      ],
+      "connected_at": "2026-08-03T09:42:00Z"
+    },
+    {
+      "id": "mod-light-01",
+      "slug": "ambient-light",
+      "label": "Ambient Light",
+      "slot": "B1",
+      "sensor_chip": "BH1750",
+      "metric_key": "lux",
+      "unit": "lux",
+      "author": "community/pixel-farm",
+      "official": false,
+      "thresholds": {
+        "warn_above": 900,
+        "crit_above": 1200
+      },
+      "status": "good",
+      "latest": 274.09,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 351.25
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 415.47
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 415.0
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 470.83
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 463.79
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 477.27
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 494.33
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 557.2
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 543.87
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 523.38
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 579.14
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 472.96
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 461.31
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 420.9
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 371.88
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 397.9
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 340.24
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 231.8
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 224.2
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 216.94
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 203.7
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 135.1
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 104.6
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 113.33
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 167.03
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 181.54
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 214.86
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 214.96
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 236.18
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 252.0
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 348.23
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 386.68
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 438.04
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 465.57
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 469.0
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 529.62
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 507.78
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 502.49
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 506.0
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 496.57
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 441.74
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 477.67
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 452.05
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 404.16
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 359.58
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 349.3
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 345.5
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 267.74
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 221.51
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 191.45
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 182.37
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 137.19
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 157.85
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 162.52
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 214.93
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 207.7
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 232.08
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 216.37
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 283.54
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 274.09
+        }
+      ],
+      "connected_at": "2026-08-10T09:42:00Z"
+    },
+    {
+      "id": "mod-vibration-01",
+      "slug": "vibration",
+      "label": "Vibration",
+      "slot": "B2",
+      "sensor_chip": "ADXL345",
+      "metric_key": "vibration_g",
+      "unit": "g (RMS)",
+      "author": "community/wrench-labs",
+      "official": false,
+      "thresholds": {
+        "warn_above": 0.18,
+        "crit_above": 0.3
+      },
+      "status": "good",
+      "latest": 0.02,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 0.06
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 0.07
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 0.01
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 0.06
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 0.07
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 0.06
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 0.06
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 0.07
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 0.07
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 0.06
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 0.01
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 0.01
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 0.06
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 0.07
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 0.04
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 0.03
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 0.05
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 0.02
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 0.02
+        }
+      ],
+      "connected_at": "2026-07-14T09:42:00Z"
+    },
+    {
+      "id": "mod-air-01",
+      "slug": "air-quality",
+      "label": "Air Quality",
+      "slot": "B3",
+      "sensor_chip": "MH-Z19 (CO2 NDIR)",
+      "metric_key": "co2_ppm",
+      "unit": "ppm",
+      "author": "community/greenhouse-oss",
+      "official": false,
+      "thresholds": {
+        "warn_above": 1000,
+        "crit_above": 1500
+      },
+      "status": "good",
+      "latest": 701.46,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 621.99
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 647.43
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 643.29
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 690.14
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 705.53
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 679.88
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 737.19
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 697.62
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 707.68
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 707.42
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 711.36
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 640.33
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 612.28
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 590.16
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 614.25
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 594.35
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 523.99
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 537.37
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 518.78
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 554.87
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 523.34
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 540.07
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 549.44
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 561.52
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 597.49
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 608.87
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 625.71
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 655.63
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 689.3
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 682.74
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 713.42
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 740.44
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 695.96
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 691.57
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 664.12
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 682.56
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 621.23
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 629.04
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 637.16
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 579.53
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 559.13
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 538.29
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 525.68
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 510.16
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 567.12
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 558.97
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 545.48
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 573.84
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 580.18
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 588.09
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 669.57
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 657.2
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 639.79
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 661.79
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 659.93
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 715.97
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 684.35
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 695.29
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 687.87
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 701.46
+        }
+      ],
+      "connected_at": "2026-08-10T09:42:00Z"
+    },
+    {
+      "id": "mod-soil-01",
+      "slug": "soil-moisture",
+      "label": "Soil Moisture",
+      "slot": "C1",
+      "sensor_chip": "Capacitive v1.2",
+      "metric_key": "soil_pct",
+      "unit": "%",
+      "author": "community/greenhouse-oss",
+      "official": false,
+      "thresholds": {
+        "warn_below": 18,
+        "crit_below": 8
+      },
+      "status": "warning",
+      "latest": 15.4,
+      "series": [
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "v": 37.91
+        },
+        {
+          "t": "2026-08-21T07:46:00Z",
+          "v": 38.7
+        },
+        {
+          "t": "2026-08-21T07:48:00Z",
+          "v": 39.67
+        },
+        {
+          "t": "2026-08-21T07:50:00Z",
+          "v": 37.87
+        },
+        {
+          "t": "2026-08-21T07:52:00Z",
+          "v": 42.42
+        },
+        {
+          "t": "2026-08-21T07:54:00Z",
+          "v": 42.84
+        },
+        {
+          "t": "2026-08-21T07:56:00Z",
+          "v": 44.15
+        },
+        {
+          "t": "2026-08-21T07:58:00Z",
+          "v": 46.35
+        },
+        {
+          "t": "2026-08-21T08:00:00Z",
+          "v": 42.91
+        },
+        {
+          "t": "2026-08-21T08:02:00Z",
+          "v": 43.65
+        },
+        {
+          "t": "2026-08-21T08:04:00Z",
+          "v": 43.92
+        },
+        {
+          "t": "2026-08-21T08:06:00Z",
+          "v": 46.91
+        },
+        {
+          "t": "2026-08-21T08:08:00Z",
+          "v": 41.37
+        },
+        {
+          "t": "2026-08-21T08:10:00Z",
+          "v": 44.55
+        },
+        {
+          "t": "2026-08-21T08:12:00Z",
+          "v": 41.36
+        },
+        {
+          "t": "2026-08-21T08:14:00Z",
+          "v": 39.32
+        },
+        {
+          "t": "2026-08-21T08:16:00Z",
+          "v": 39.7
+        },
+        {
+          "t": "2026-08-21T08:18:00Z",
+          "v": 40.1
+        },
+        {
+          "t": "2026-08-21T08:20:00Z",
+          "v": 43.13
+        },
+        {
+          "t": "2026-08-21T08:22:00Z",
+          "v": 39.51
+        },
+        {
+          "t": "2026-08-21T08:24:00Z",
+          "v": 39.71
+        },
+        {
+          "t": "2026-08-21T08:26:00Z",
+          "v": 37.5
+        },
+        {
+          "t": "2026-08-21T08:28:00Z",
+          "v": 39.33
+        },
+        {
+          "t": "2026-08-21T08:30:00Z",
+          "v": 35.93
+        },
+        {
+          "t": "2026-08-21T08:32:00Z",
+          "v": 38.73
+        },
+        {
+          "t": "2026-08-21T08:34:00Z",
+          "v": 34.46
+        },
+        {
+          "t": "2026-08-21T08:36:00Z",
+          "v": 34.04
+        },
+        {
+          "t": "2026-08-21T08:38:00Z",
+          "v": 34.66
+        },
+        {
+          "t": "2026-08-21T08:40:00Z",
+          "v": 33.87
+        },
+        {
+          "t": "2026-08-21T08:42:00Z",
+          "v": 35.41
+        },
+        {
+          "t": "2026-08-21T08:44:00Z",
+          "v": 32.98
+        },
+        {
+          "t": "2026-08-21T08:46:00Z",
+          "v": 30.63
+        },
+        {
+          "t": "2026-08-21T08:48:00Z",
+          "v": 31.34
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "v": 31.17
+        },
+        {
+          "t": "2026-08-21T08:52:00Z",
+          "v": 33.09
+        },
+        {
+          "t": "2026-08-21T08:54:00Z",
+          "v": 32.67
+        },
+        {
+          "t": "2026-08-21T08:56:00Z",
+          "v": 32.11
+        },
+        {
+          "t": "2026-08-21T08:58:00Z",
+          "v": 33.91
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "v": 32.23
+        },
+        {
+          "t": "2026-08-21T09:02:00Z",
+          "v": 33.34
+        },
+        {
+          "t": "2026-08-21T09:04:00Z",
+          "v": 34.41
+        },
+        {
+          "t": "2026-08-21T09:06:00Z",
+          "v": 37.11
+        },
+        {
+          "t": "2026-08-21T09:08:00Z",
+          "v": 35.41
+        },
+        {
+          "t": "2026-08-21T09:10:00Z",
+          "v": 35.82
+        },
+        {
+          "t": "2026-08-21T09:12:00Z",
+          "v": 36.01
+        },
+        {
+          "t": "2026-08-21T09:14:00Z",
+          "v": 35.88
+        },
+        {
+          "t": "2026-08-21T09:16:00Z",
+          "v": 33.88
+        },
+        {
+          "t": "2026-08-21T09:18:00Z",
+          "v": 32.76
+        },
+        {
+          "t": "2026-08-21T09:20:00Z",
+          "v": 34.15
+        },
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "v": 32.58
+        },
+        {
+          "t": "2026-08-21T09:24:00Z",
+          "v": 31.22
+        },
+        {
+          "t": "2026-08-21T09:26:00Z",
+          "v": 29.89
+        },
+        {
+          "t": "2026-08-21T09:28:00Z",
+          "v": 27.79
+        },
+        {
+          "t": "2026-08-21T09:30:00Z",
+          "v": 25.64
+        },
+        {
+          "t": "2026-08-21T09:32:00Z",
+          "v": 25.38
+        },
+        {
+          "t": "2026-08-21T09:34:00Z",
+          "v": 23.04
+        },
+        {
+          "t": "2026-08-21T09:36:00Z",
+          "v": 21.74
+        },
+        {
+          "t": "2026-08-21T09:38:00Z",
+          "v": 19.4
+        },
+        {
+          "t": "2026-08-21T09:40:00Z",
+          "v": 17.4
+        },
+        {
+          "t": "2026-08-21T09:42:00Z",
+          "v": 15.4
+        }
+      ],
+      "connected_at": "2026-07-25T09:42:00Z"
+    },
+    {
+      "id": "mod-access-01",
+      "slug": "access-control",
+      "label": "Access Control",
+      "slot": "A4",
+      "sensor_chip": "MFRC522 RFID",
+      "author": "nodeframe-core",
+      "official": true,
+      "status": "warning",
+      "connected_at": "2026-07-01T09:42:00Z",
+      "scans": [
+        {
+          "t": "2026-08-21T09:22:00Z",
+          "card_uid": "04:79:A3:16:5C",
+          "user_name": "unknown badge",
+          "authorized": false
+        },
+        {
+          "t": "2026-08-21T09:21:00Z",
+          "card_uid": "04:40:A3:26:5C",
+          "user_name": "M. Fischer",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T09:00:00Z",
+          "card_uid": "04:41:A3:35:5C",
+          "user_name": "J. Kim",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T08:50:00Z",
+          "card_uid": "04:51:A3:37:5C",
+          "user_name": "M. Fischer",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T07:51:00Z",
+          "card_uid": "04:49:A3:83:5C",
+          "user_name": "A. Rao",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T07:44:00Z",
+          "card_uid": "04:30:A3:49:5C",
+          "user_name": "unknown badge",
+          "authorized": false
+        },
+        {
+          "t": "2026-08-21T03:43:00Z",
+          "card_uid": "04:18:A3:93:5C",
+          "user_name": "A. Rao",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T03:17:00Z",
+          "card_uid": "04:35:A3:19:5C",
+          "user_name": "J. Kim",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T02:30:00Z",
+          "card_uid": "04:20:A3:70:5C",
+          "user_name": "S. Novak",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T02:23:00Z",
+          "card_uid": "04:69:A3:33:5C",
+          "user_name": "J. Kim",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T01:56:00Z",
+          "card_uid": "04:58:A3:45:5C",
+          "user_name": "T. Alabi",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T01:45:00Z",
+          "card_uid": "04:57:A3:31:5C",
+          "user_name": "S. Novak",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T01:37:00Z",
+          "card_uid": "04:82:A3:37:5C",
+          "user_name": "T. Alabi",
+          "authorized": true
+        },
+        {
+          "t": "2026-08-21T00:04:00Z",
+          "card_uid": "04:20:A3:92:5C",
+          "user_name": "A. Rao",
+          "authorized": true
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": "2026-08-21T09:35:00Z",
+      "type": "relay",
+      "severity": "critical",
+      "module": "Core Hub",
+      "message": "Machinery power cut via relay R1 in response to Gas Level critical."
+    },
+    {
+      "t": "2026-08-21T09:34:00Z",
+      "type": "threshold",
+      "severity": "critical",
+      "module": "Gas Level",
+      "message": "Gas Level exceeded 650 ppm (reading: 720 ppm) \u2014 safety relay tripped."
+    },
+    {
+      "t": "2026-08-21T09:24:00Z",
+      "type": "threshold",
+      "severity": "warning",
+      "module": "Soil Moisture",
+      "message": "Soil Moisture trending toward the warning band \u2014 irrigation suggested within ~2 hours."
+    },
+    {
+      "t": "2026-08-21T09:01:00Z",
+      "type": "access",
+      "severity": "warning",
+      "module": "Access Control",
+      "message": "Unrecognized badge presented at Core Hub \u2014 access denied."
+    },
+    {
+      "t": "2026-08-21T08:32:00Z",
+      "type": "plugin",
+      "severity": "info",
+      "module": "Soil Moisture",
+      "message": "Plugin 'soil-moisture' v1.0 installed from community/greenhouse-oss and auto-mapped to slot C1."
+    },
+    {
+      "t": "2026-08-21T07:37:00Z",
+      "type": "connect",
+      "severity": "info",
+      "module": "Vibration",
+      "message": "Module hot-plugged into slot B2 \u2014 manifest read, driver loaded, no reboot required."
+    },
+    {
+      "t": "2026-08-21T03:50:00Z",
+      "type": "firmware",
+      "severity": "info",
+      "module": "Core Hub",
+      "message": "Core firmware updated to v2.4.1 (plugin ABI unchanged, all modules stayed online)."
+    },
+    {
+      "t": "2026-08-21T00:27:00Z",
+      "type": "disconnect",
+      "severity": "warning",
+      "module": "Ambient Light",
+      "message": "Module unresponsive for 30s and marked offline \u2014 reconnected 40s later."
+    }
+  ],
+  "marketplace": [
+    {
+      "slug": "ambient-climate",
+      "name": "Ambient Climate",
+      "sensor_chip": "DHT11",
+      "category": "Environmental",
+      "author": "nodeframe-core",
+      "version": "core",
+      "installs": null,
+      "official": true,
+      "installed": true,
+      "description": "Installed in slot A1."
+    },
+    {
+      "slug": "gas-level",
+      "name": "Gas Level",
+      "sensor_chip": "MQ-6 (LPG/Propane)",
+      "category": "Environmental",
+      "author": "nodeframe-core",
+      "version": "core",
+      "installs": null,
+      "official": true,
+      "installed": true,
+      "description": "Installed in slot A2."
+    },
+    {
+      "slug": "proximity",
+      "name": "Proximity",
+      "sensor_chip": "HC-SR04",
+      "category": "Environmental",
+      "author": "nodeframe-core",
+      "version": "core",
+      "installs": null,
+      "official": true,
+      "installed": true,
+      "description": "Installed in slot A3."
+    },
+    {
+      "slug": "ambient-light",
+      "name": "Ambient Light",
+      "sensor_chip": "BH1750",
+      "category": "Environmental",
+      "author": "community/pixel-farm",
+      "version": "1.0.0",
+      "installs": null,
+      "official": false,
+      "installed": true,
+      "description": "Installed in slot B1."
+    },
+    {
+      "slug": "vibration",
+      "name": "Vibration",
+      "sensor_chip": "ADXL345",
+      "category": "Environmental",
+      "author": "community/wrench-labs",
+      "version": "1.0.0",
+      "installs": null,
+      "official": false,
+      "installed": true,
+      "description": "Installed in slot B2."
+    },
+    {
+      "slug": "air-quality",
+      "name": "Air Quality",
+      "sensor_chip": "MH-Z19 (CO2 NDIR)",
+      "category": "Environmental",
+      "author": "community/greenhouse-oss",
+      "version": "1.0.0",
+      "installs": null,
+      "official": false,
+      "installed": true,
+      "description": "Installed in slot B3."
+    },
+    {
+      "slug": "soil-moisture",
+      "name": "Soil Moisture",
+      "sensor_chip": "Capacitive v1.2",
+      "category": "Environmental",
+      "author": "community/greenhouse-oss",
+      "version": "1.0.0",
+      "installs": null,
+      "official": false,
+      "installed": true,
+      "description": "Installed in slot C1."
+    },
+    {
+      "slug": "sound-level",
+      "name": "Sound Level",
+      "sensor_chip": "KY-038",
+      "category": "Audio",
+      "author": "community/quiet-office",
+      "version": "1.3.0",
+      "installs": 812,
+      "official": false,
+      "description": "Ambient dB monitoring with configurable noise-complaint thresholds.",
+      "installed": false
+    },
+    {
+      "slug": "uv-index",
+      "name": "UV Index",
+      "sensor_chip": "GUVA-S12SD",
+      "category": "Environmental",
+      "author": "community/greenhouse-oss",
+      "version": "0.9.2",
+      "installs": 341,
+      "official": false,
+      "description": "Outdoor UV exposure tracking, tuned for greenhouse and grow-tent rigs.",
+      "installed": false
+    },
+    {
+      "slug": "water-leak",
+      "name": "Water Leak",
+      "sensor_chip": "Generic probe pair",
+      "category": "Safety",
+      "author": "community/wrench-labs",
+      "version": "1.0.4",
+      "installs": 1204,
+      "official": false,
+      "description": "Binary leak detection with an instant critical event on contact.",
+      "installed": false
+    },
+    {
+      "slug": "current-draw",
+      "name": "Current Draw",
+      "sensor_chip": "ACS712-20A",
+      "category": "Power",
+      "author": "nodeframe-core",
+      "version": "2.1.0",
+      "installs": 2790,
+      "official": true,
+      "description": "Clamp-style current sensing for machinery load and overcurrent cutoffs.",
+      "installed": false
+    },
+    {
+      "slug": "flame-detect",
+      "name": "Flame Detect",
+      "sensor_chip": "IR flame sensor",
+      "category": "Safety",
+      "author": "community/firebreak",
+      "version": "1.1.1",
+      "installs": 566,
+      "official": false,
+      "description": "IR flicker detection for early fire signal, pairs well with Gas Level.",
+      "installed": false
+    }
+  ]
+};
+</script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============ constants & helpers ============ */
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var MODULE_ORDER = ['ambient-climate','gas-level','proximity','access-control','ambient-light','vibration','air-quality','soil-moisture'];
+  var seriesVar = {};
+  MODULE_ORDER.forEach(function(slug, i){ seriesVar[slug] = '--series-' + (i+1); });
+
+  function cssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function colorFor(slug){ return cssVar(seriesVar[slug] || '--series-1'); }
+
+  function byId(id){ return document.getElementById(id); }
+  function el(tag, cls){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    return e;
+  }
+  function svgEl(tag){ return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+  function text(node, str){ node.textContent = str; return node; }
+
+  function round(v, d){
+    var m = Math.pow(10, d==null?2:d);
+    return Math.round(v*m)/m;
+  }
+  function fmtNum(v, d){
+    if(v==null || isNaN(v)) return '—';
+    var n = round(v, d==null?1:d);
+    return n.toLocaleString('en-US', { minimumFractionDigits:(d==null?1:d), maximumFractionDigits:(d==null?1:d) });
+  }
+  function fmtInt(v){
+    if(v==null || isNaN(v)) return '—';
+    return Math.round(v).toLocaleString('en-US');
+  }
+  function pad2(n){ return n<10 ? '0'+n : ''+n; }
+
+  /* ============ virtual clock ============ */
+  /* the seed data's generated_at is treated as "now" and advances in real
+     wall-clock time from there, so relative labels ("x min ago"), the top-bar
+     clock, and freshly-simulated points all stay consistent with each other. */
+  var seedNow = new Date(SEED.generated_at);
+  var loadedAt = Date.now();
+  function virtualNow(){
+    if(reduceMotion) return seedNow;
+    return new Date(seedNow.getTime() + (Date.now() - loadedAt));
+  }
+  function fmtClock(d){
+    return pad2(d.getUTCHours())+':'+pad2(d.getUTCMinutes())+':'+pad2(d.getUTCSeconds());
+  }
+  function fmtClockShort(iso){
+    var d = new Date(iso);
+    return pad2(d.getUTCHours())+':'+pad2(d.getUTCMinutes());
+  }
+  function fmtDateLabel(d){
+    var months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return months[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear()+' UTC';
+  }
+  function agoLabel(iso){
+    var ms = virtualNow().getTime() - new Date(iso).getTime();
+    var mins = Math.floor(ms/60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins+' min ago';
+    var hrs = Math.floor(mins/60);
+    if(hrs < 24) return hrs+'h '+(mins%60)+'m ago';
+    var days = Math.floor(hrs/24);
+    return days+'d '+(hrs%24)+'h ago';
+  }
+
+  /* ============ icons ============ */
+  var ICONS = {
+    good: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.2 8.3l1.8 1.8 3.8-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    warning: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2.2l6.4 11.1a1 1 0 01-.87 1.5H2.47a1 1 0 01-.87-1.5L8 2.2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6.6v3.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.9" r="0.9" fill="currentColor"/></svg>',
+    critical: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M5.2 1.5h5.6l3.7 3.7v5.6l-3.7 3.7H5.2l-3.7-3.7V5.2l3.7-3.7z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 5.4v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="10.7" r="0.9" fill="currentColor"/></svg>',
+    info: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.9" r="0.9" fill="currentColor"/></svg>',
+    check: '<svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8.4l3.2 3.2L13 4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    x: '<svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    plus: '<svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    modules: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 1.3v1.7M10 1.3v1.7M6 13v1.7M10 13v1.7M1.3 6h1.7M1.3 10h1.7M13 6h1.7M13 10h1.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    alert: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v6.2M8 12.3v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="8" r="6.7" stroke="currentColor" stroke-width="1.3"/></svg>',
+    pulse: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1.5 8.5h3l1.6-4.7 2.4 8.4 1.7-5.7 1.2 2h3.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    clock: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.7" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.4V8l2.6 1.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+  function iconHtml(name){ return ICONS[name] || ''; }
+  function statusPill(status, extraClass){
+    var span = el('span','status-pill s-'+status+(extraClass?' '+extraClass:''));
+    span.innerHTML = iconHtml(status);
+    var label = document.createElement('span');
+    label.textContent = status.toUpperCase();
+    span.appendChild(label);
+    return span;
+  }
+
+  /* ============ threshold-based status ============ */
+  function computeStatus(value, thresholds){
+    if(!thresholds) return 'good';
+    if(thresholds.crit_above!=null && value >= thresholds.crit_above) return 'critical';
+    if(thresholds.crit_below!=null && value <= thresholds.crit_below) return 'critical';
+    if(thresholds.warn_above!=null && value >= thresholds.warn_above) return 'warning';
+    if(thresholds.warn_below!=null && value <= thresholds.warn_below) return 'warning';
+    return 'good';
+  }
+  var STATUS_RANK = { good:0, warning:1, critical:2 };
+
+  /* ============ module runtime state ============ */
+  var modules = SEED.modules.map(function(m){
+    return {
+      def: m,
+      slug: m.slug,
+      color: null, // set after DOM ready (css vars available immediately actually)
+      series: m.series ? m.series.map(function(p){ return { t:p.t, v:p.v, v2:p.v2 }; }) : null,
+      status: m.status,
+      latest: m.latest,
+      chartApi: null,
+      chartApi2: null
+    };
+  });
+  modules.sort(function(a,b){ return MODULE_ORDER.indexOf(a.slug) - MODULE_ORDER.indexOf(b.slug); });
+  var modulesBySlug = {};
+  modules.forEach(function(m){ modulesBySlug[m.slug] = m; });
+
+  var SIM_CFG = {
+    'ambient-climate': { step:0.32, reversion:0.10, min:12, max:34, decimals:2,
+                          v2: { step:0.9, reversion:0.10, min:22, max:72, decimals:2 } },
+    'gas-level':        { step:11, reversion:0.14, min:70, max:340, decimals:1 },
+    'proximity':        { step:9,  reversion:0.08, min:18, max:235, decimals:2 },
+    'ambient-light':    { step:26, reversion:0.10, min:40, max:640, decimals:2 },
+    'vibration':        { step:0.012, reversion:0.16, min:0, max:0.16, decimals:2 },
+    'air-quality':      { step:16, reversion:0.10, min:440, max:900, decimals:2 },
+    'soil-moisture':    { drift:true, min:3.5, decimals:2 }
+  };
+
+  function nextValue(seriesVals, cfg){
+    var last = seriesVals[seriesVals.length-1];
+    if(cfg.drift){
+      var step = (0.04 + Math.random()*0.14);
+      var noise = (Math.random()-0.5)*0.06;
+      var v = last - step + noise;
+      if(cfg.min!=null) v = Math.max(cfg.min, v);
+      return round(v, cfg.decimals);
+    }
+    var recent = seriesVals.slice(-8);
+    var avg = recent.reduce(function(a,b){return a+b;},0)/recent.length;
+    var noise2 = (Math.random()-0.5)*2*cfg.step;
+    var reversion = (avg-last)*cfg.reversion;
+    var v2 = last + noise2 + reversion;
+    if(cfg.min!=null) v2 = Math.max(cfg.min, v2);
+    if(cfg.max!=null) v2 = Math.min(cfg.max, v2);
+    return round(v2, cfg.decimals);
+  }
+
+  /* ============ chart factory ============ */
+  function createChart(container, opts){
+    // opts: { color, unit, decimals, thresholds:[{value,label,status}], ariaLabel }
+    var W = 600, H = opts.height || 180;
+    var padL = 8, padR = 8, padT = 12, padB = 12;
+
+    var svg = svgEl('svg');
+    svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+    svg.setAttribute('preserveAspectRatio','none');
+    svg.setAttribute('class','chart-svg');
+    svg.setAttribute('tabindex','0');
+    svg.setAttribute('role','img');
+    svg.setAttribute('aria-label', opts.ariaLabel || 'Time series chart');
+
+    var gGrid = svgEl('g');
+    var gThresh = svgEl('g');
+    var areaPath = svgEl('path'); areaPath.setAttribute('class','chart-area');
+    var linePath = svgEl('path'); linePath.setAttribute('class','chart-line');
+    var marker = svgEl('circle'); marker.setAttribute('class','chart-marker');
+    var crosshair = svgEl('line'); crosshair.setAttribute('class','chart-crosshair');
+    var hoverDot = svgEl('circle'); hoverDot.setAttribute('class','chart-hoverdot');
+    var hitRect = svgEl('rect'); hitRect.setAttribute('class','chart-hit');
+    hitRect.setAttribute('x',0); hitRect.setAttribute('y',0);
+    hitRect.setAttribute('width',W); hitRect.setAttribute('height',H);
+
+    linePath.style.stroke = opts.color;
+    areaPath.style.fill = opts.color;
+    marker.style.fill = opts.color;
+
+    svg.appendChild(gGrid);
+    svg.appendChild(gThresh);
+    svg.appendChild(areaPath);
+    svg.appendChild(linePath);
+    svg.appendChild(marker);
+    svg.appendChild(crosshair);
+    svg.appendChild(hoverDot);
+    svg.appendChild(hitRect);
+    container.appendChild(svg);
+
+    var tooltip = el('div','chart-tooltip');
+    tooltip.hidden = true;
+    container.appendChild(tooltip);
+
+    var state = { points:[], x:null, y:null };
+
+    function update(points){
+      state.points = points;
+      var vals = points.map(function(p){ return p.v; });
+      var threshVals = (opts.thresholds||[]).map(function(t){ return t.value; });
+      var min = Math.min.apply(null, vals.concat(threshVals));
+      var max = Math.max.apply(null, vals.concat(threshVals));
+      if(min===max){ min -= 1; max += 1; }
+      var range = max-min;
+      min -= range*0.10; max += range*0.14;
+
+      function x(i){ return padL + (points.length<=1?0:(i/(points.length-1))*(W-padL-padR)); }
+      function y(v){ return padT + (1 - (v-min)/(max-min))*(H-padT-padB); }
+      state.x = x; state.y = y; state.W = W; state.H = H; state.padL=padL; state.padR=padR;
+
+      gGrid.innerHTML = '';
+      [0.25,0.5,0.75].forEach(function(f){
+        var ly = padT + f*(H-padT-padB);
+        var line = svgEl('line');
+        line.setAttribute('x1',padL); line.setAttribute('x2',W-padR);
+        line.setAttribute('y1',ly); line.setAttribute('y2',ly);
+        line.setAttribute('class','gridline');
+        gGrid.appendChild(line);
+      });
+
+      gThresh.innerHTML = '';
+      (opts.thresholds||[]).forEach(function(t){
+        var ty = y(t.value);
+        var line = svgEl('line');
+        line.setAttribute('x1',padL); line.setAttribute('x2',W-padR);
+        line.setAttribute('y1',ty); line.setAttribute('y2',ty);
+        line.setAttribute('class','threshold-line');
+        line.style.stroke = cssVar('--'+t.status);
+        gThresh.appendChild(line);
+        var label = svgEl('text');
+        label.setAttribute('x', W-padR); label.setAttribute('y', ty-3.5);
+        label.setAttribute('text-anchor','end');
+        label.setAttribute('class','threshold-label');
+        label.style.fill = cssVar('--'+t.status);
+        label.textContent = t.label;
+        gThresh.appendChild(label);
+      });
+
+      var d = '', ad = '';
+      points.forEach(function(p,i){
+        var px = x(i).toFixed(2), py = y(p.v).toFixed(2);
+        d += (i===0?'M':'L')+px+','+py+' ';
+      });
+      var baseY = (H-padB).toFixed(2);
+      ad = d + 'L'+x(points.length-1).toFixed(2)+','+baseY+' L'+x(0).toFixed(2)+','+baseY+' Z';
+      linePath.setAttribute('d', d);
+      areaPath.setAttribute('d', ad);
+
+      var last = points[points.length-1];
+      marker.setAttribute('cx', x(points.length-1));
+      marker.setAttribute('cy', y(last.v));
+    }
+
+    function showAt(idx){
+      var pts = state.points;
+      if(!pts.length) return;
+      idx = Math.max(0, Math.min(pts.length-1, idx));
+      var p = pts[idx];
+      var px = state.x(idx), py = state.y(p.v);
+      crosshair.setAttribute('x1', px); crosshair.setAttribute('x2', px);
+      crosshair.setAttribute('y1', 6); crosshair.setAttribute('y2', state.H-6);
+      crosshair.style.display = 'block';
+      hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
+      hoverDot.style.display = 'block';
+      tooltip.hidden = false;
+      var pctX = px / state.W * 100;
+      var pctY = py / state.H * 100;
+      tooltip.style.left = pctX+'%';
+      tooltip.style.top = pctY+'%';
+      tooltip.innerHTML = '';
+      var vEl = el('div','tt-value');
+      vEl.textContent = fmtNum(p.v, opts.decimals) + ' ' + opts.unit;
+      var tEl = el('div','tt-time');
+      tEl.textContent = fmtClockShort(p.t) + ' UTC';
+      tooltip.appendChild(vEl); tooltip.appendChild(tEl);
+    }
+    function hide(){
+      tooltip.hidden = true;
+      crosshair.style.display = 'none';
+      hoverDot.style.display = 'none';
+    }
+    function idxFromEvent(evt){
+      var rect = svg.getBoundingClientRect();
+      var relX = (evt.clientX - rect.left) / rect.width * state.W;
+      var frac = (relX - padL) / (state.W - padL - padR);
+      return Math.round(frac * (state.points.length-1));
+    }
+    svg.addEventListener('pointermove', function(evt){ showAt(idxFromEvent(evt)); });
+    svg.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', function(){ showAt(state.points.length-1); });
+    svg.addEventListener('blur', hide);
+    var focusIdx = 0;
+    svg.addEventListener('keydown', function(evt){
+      if(evt.key==='ArrowLeft'){ focusIdx = Math.max(0, (focusIdx||state.points.length-1)-1); showAt(focusIdx); evt.preventDefault(); }
+      else if(evt.key==='ArrowRight'){ focusIdx = Math.min(state.points.length-1, (focusIdx||0)+1); showAt(focusIdx); evt.preventDefault(); }
+    });
+
+    return { update: update };
+  }
+
+  /* ============ module card rendering ============ */
+  var METRIC_LABEL = {
+    'ambient-climate':'TEMP', 'gas-level':'GAS PPM', 'proximity':'DISTANCE',
+    'ambient-light':'LUX', 'vibration':'VIBRATION', 'air-quality':'CO₂', 'soil-moisture':'SOIL MOISTURE'
+  };
+
+  function thresholdsFor(m){
+    var t = m.def.thresholds;
+    if(!t) return [];
+    var arr = [];
+    if(t.warn_above!=null) arr.push({ value:t.warn_above, label:'WARN '+t.warn_above, status:'warning' });
+    if(t.crit_above!=null) arr.push({ value:t.crit_above, label:'CRIT '+t.crit_above, status:'critical' });
+    if(t.warn_below!=null) arr.push({ value:t.warn_below, label:'WARN '+t.warn_below, status:'warning' });
+    if(t.crit_below!=null) arr.push({ value:t.crit_below, label:'CRIT '+t.crit_below, status:'critical' });
+    return arr;
+  }
+
+  function buildModuleCard(m){
+    var d = m.def;
+    var color = colorFor(m.slug);
+    var card = el('article','module-card');
+    card.id = 'card-'+m.slug;
+
+    var head = el('div','module-card-head');
+    var idWrap = el('div','module-id');
+    var slotBadge = el('span','slot-badge'); slotBadge.textContent = d.slot;
+    var meta = el('div','module-meta');
+    var nameRow = el('div');
+    var nameEl = el('span','module-name'); nameEl.textContent = d.label;
+    nameRow.appendChild(nameEl);
+    var chipEl = el('div','module-chip'); chipEl.textContent = d.sensor_chip;
+    meta.appendChild(nameRow); meta.appendChild(chipEl);
+    idWrap.appendChild(slotBadge); idWrap.appendChild(meta);
+
+    var headRight = el('div','module-meta');
+    headRight.style.alignItems = 'flex-end';
+    var pill = statusPill(m.status);
+    pill.id = 'pill-'+m.slug;
+    var offTag = el('span','official-tag');
+    offTag.textContent = d.official ? 'OFFICIAL' : 'COMMUNITY';
+    headRight.appendChild(pill);
+    headRight.appendChild(offTag);
+
+    head.appendChild(idWrap);
+    head.appendChild(headRight);
+    card.appendChild(head);
+
+    if(d.slug === 'access-control'){
+      var readout = el('div','module-readout');
+      var lastScan = d.scans[0];
+      var rv = el('span','readout-value'); rv.style.fontSize='16px';
+      rv.textContent = lastScan.authorized ? 'Access granted' : 'Access denied';
+      var ru = el('span','readout-unit'); ru.textContent = 'last scan '+fmtClockShort(lastScan.t)+' UTC';
+      readout.appendChild(rv); readout.appendChild(ru);
+      card.appendChild(readout);
+
+      var listWrap = el('div','chart-block');
+      var title = el('div','chart-title'); title.textContent = 'RECENT SCANS ('+d.scans.length+')';
+      listWrap.appendChild(title);
+      var list = el('div','scan-list'); list.id = 'scans-'+m.slug;
+      d.scans.forEach(function(s){ list.appendChild(buildScanRow(s)); });
+      listWrap.appendChild(list);
+      card.appendChild(listWrap);
+
+      var deniedCount = d.scans.filter(function(s){return !s.authorized;}).length;
+      var foot = el('div','module-footer');
+      foot.innerHTML = '<span>'+deniedCount+' denied of '+d.scans.length+' scans</span><span>slot '+d.slot+' · connected '+agoDays(d.connected_at)+'</span>';
+      card.appendChild(foot);
+      return card;
+    }
+
+    var readout = el('div','module-readout');
+    var rv = el('span','readout-value'); rv.id = 'val-'+m.slug;
+    rv.textContent = fmtNum(m.latest, decimalsFor(m.slug));
+    var ru = el('span','readout-unit'); ru.textContent = d.unit;
+    readout.appendChild(rv); readout.appendChild(ru);
+    if(d.secondary_metric_key){
+      var sec = el('div','readout-secondary');
+      sec.id = 'val2-'+m.slug;
+      var lastSecondary = m.series[m.series.length-1].v2;
+      sec.innerHTML = '<b>'+fmtNum(lastSecondary,1)+'</b> '+d.secondary_unit;
+      readout.appendChild(sec);
+    }
+    card.appendChild(readout);
+
+    var chartBlock = el('div','chart-block');
+    if(d.secondary_metric_key){
+      var pair = el('div','chart-pair');
+      var c1 = el('div');
+      var t1 = el('div','chart-title'); t1.textContent = 'TEMPERATURE (°C)';
+      var cc1 = el('div','chart-container');
+      c1.appendChild(t1); c1.appendChild(cc1);
+      var c2 = el('div');
+      var t2 = el('div','chart-title'); t2.textContent = 'HUMIDITY (%RH)';
+      var cc2 = el('div','chart-container');
+      c2.appendChild(t2); c2.appendChild(cc2);
+      pair.appendChild(c1); pair.appendChild(c2);
+      chartBlock.appendChild(pair);
+      card.appendChild(chartBlock);
+
+      m.chartApi = createChart(cc1, { color:color, unit:'°C', decimals:2, thresholds:thresholdsFor(m), ariaLabel: d.label+' temperature over time' }); // climate thresholds are close to the live range, worth showing
+      m.chartApi2 = createChart(cc2, { color:color, unit:'%RH', decimals:1, thresholds:[], ariaLabel: d.label+' humidity over time' });
+      m.chartApi.update(m.series.map(function(p){ return {t:p.t, v:p.v}; }));
+      m.chartApi2.update(m.series.map(function(p){ return {t:p.t, v:p.v2}; }));
+    } else {
+      var title = el('div','chart-title'); title.textContent = (METRIC_LABEL[d.slug]||'READING')+' ('+d.unit+')';
+      var cc = el('div','chart-container tall');
+      chartBlock.appendChild(title); chartBlock.appendChild(cc);
+      card.appendChild(chartBlock);
+      var showThresh = (d.slug === 'gas-level' || d.slug === 'soil-moisture');
+      m.chartApi = createChart(cc, { color:color, unit:d.unit, decimals:decimalsFor(m.slug), thresholds: showThresh ? thresholdsFor(m) : [], ariaLabel: d.label+' over time' });
+      m.chartApi.update(m.series.map(function(p){ return {t:p.t, v:p.v}; }));
+    }
+
+    var foot = el('div','module-footer');
+    foot.innerHTML = '<span>'+(d.author||'nodeframe-core')+'</span><span>connected '+agoDays(d.connected_at)+'</span>';
+    card.appendChild(foot);
+
+    return card;
+  }
+
+  function decimalsFor(slug){
+    if(slug==='ambient-climate') return 2;
+    if(slug==='vibration') return 2;
+    if(slug==='soil-moisture') return 1;
+    if(slug==='proximity') return 1;
+    if(slug==='ambient-light') return 0;
+    return 1;
+  }
+
+  function agoDays(iso){
+    var ms = virtualNow().getTime() - new Date(iso).getTime();
+    var days = Math.floor(ms/86400000);
+    if(days < 1) return 'today';
+    return days+'d ago';
+  }
+
+  function buildScanRow(s){
+    var row = el('div','scan-row');
+    var t = el('span','scan-time'); t.textContent = fmtClockShort(s.t);
+    var userWrap = el('div','scan-user');
+    var name = el('span','scan-name'); name.textContent = s.user_name;
+    var uid = el('span','scan-uid'); uid.textContent = s.card_uid;
+    userWrap.appendChild(name); userWrap.appendChild(uid);
+    var flag = el('span','scan-flag '+(s.authorized?'ok':'denied'));
+    flag.innerHTML = s.authorized ? iconHtml('check') : iconHtml('x');
+    var flagLabel = document.createElement('span');
+    flagLabel.textContent = s.authorized ? 'OK' : 'DENIED';
+    flag.appendChild(flagLabel);
+    row.appendChild(t); row.appendChild(userWrap); row.appendChild(flag);
+    return row;
+  }
+
+  /* ============ stat tiles ============ */
+  function computeAvgSampleRate(){
+    var rates = [];
+    modules.forEach(function(m){
+      if(!m.series || m.series.length < 2) return;
+      var a = new Date(m.series[m.series.length-2].t).getTime();
+      var b = new Date(m.series[m.series.length-1].t).getTime();
+      var deltaMin = (b-a)/60000;
+      if(deltaMin > 0) rates.push(1/deltaMin); // samples per minute
+    });
+    if(!rates.length) return 0;
+    return rates.reduce(function(a,b){return a+b;},0)/rates.length;
+  }
+
+  function currentAlertBreakdown(){
+    var warn = 0, crit = 0;
+    modules.forEach(function(m){
+      if(m.status==='warning') warn++;
+      else if(m.status==='critical') crit++;
+    });
+    return { warn:warn, crit:crit, total:warn+crit };
+  }
+
+  function overallStatus(){
+    var worst = 'good';
+    modules.forEach(function(m){
+      if(STATUS_RANK[m.status] > STATUS_RANK[worst]) worst = m.status;
+    });
+    return worst;
+  }
+
+  var statTileRefs = {};
+  function buildStatTiles(){
+    var row = byId('statRow');
+    row.innerHTML = '';
+
+    var activeCount = modules.length;
+    var t1 = statTile('Active modules', activeCount+'', '/ '+SEED.core.slots_total, iconHtml('modules'));
+    row.appendChild(t1.node);
+
+    var alerts = currentAlertBreakdown();
+    var t2 = statTile('Open alerts', alerts.total+'', 'in current view', iconHtml('alert'));
+    row.appendChild(t2.node);
+    statTileRefs.alerts = t2;
+
+    var rate = computeAvgSampleRate();
+    var perHour = Math.round(rate*60);
+    var t3 = statTile('Avg sample rate', perHour+'', '/hr per module', iconHtml('pulse'));
+    row.appendChild(t3.node);
+
+    var uh = SEED.core.uptime_hours;
+    var days = Math.floor(uh/24), hrs = Math.round(uh%24);
+    var t4 = statTile('Core uptime', days+'d '+hrs+'h', 'since last reboot', iconHtml('clock'));
+    t4.node.id = 'uptimeTile';
+    row.appendChild(t4.node);
+    statTileRefs.uptime = t4;
+
+    refreshAlertTile();
+  }
+
+  function statTile(label, value, caption, icon){
+    var node = el('div','stat-tile');
+    var top = el('div');
+    top.style.display='flex'; top.style.justifyContent='space-between'; top.style.alignItems='flex-start';
+    var lab = el('div','stat-label'); lab.textContent = label;
+    var ic = el('div'); ic.style.color='var(--ink-muted)'; ic.innerHTML = icon;
+    top.appendChild(lab); top.appendChild(ic);
+    var vrow = el('div','stat-value-row');
+    var val = el('span','stat-value'); val.textContent = value;
+    vrow.appendChild(val);
+    var cap = el('div','stat-caption');
+    var capText = document.createElement('span'); capText.textContent = caption;
+    cap.appendChild(capText);
+    node.appendChild(top); node.appendChild(vrow); node.appendChild(cap);
+    return { node:node, valueEl:val, captionEl:cap };
+  }
+
+  function refreshAlertTile(){
+    var alerts = currentAlertBreakdown();
+    statTileRefs.alerts.valueEl.textContent = alerts.total;
+    var cap = statTileRefs.alerts.captionEl;
+    cap.innerHTML = '';
+    if(alerts.warn){
+      var d1 = el('span','dot'); d1.style.background='var(--warning)';
+      cap.appendChild(d1);
+      var s1 = document.createElement('span'); s1.textContent = alerts.warn+' warning';
+      cap.appendChild(s1);
+    }
+    if(alerts.crit){
+      var d2 = el('span','dot'); d2.style.background='var(--critical)';
+      cap.appendChild(d2);
+      var s2 = document.createElement('span'); s2.textContent = alerts.crit+' critical';
+      cap.appendChild(s2);
+    }
+    if(!alerts.total){
+      var s3 = document.createElement('span'); s3.textContent = 'all modules nominal';
+      cap.appendChild(s3);
+    }
+  }
+
+  function refreshUptimeTile(){
+    var elapsedHrs = reduceMotion ? 0 : (Date.now()-loadedAt)/3600000;
+    var uh = SEED.core.uptime_hours + elapsedHrs;
+    var days = Math.floor(uh/24), hrs = Math.floor(uh%24), mins = Math.floor((uh*60)%60);
+    statTileRefs.uptime.valueEl.textContent = days+'d '+hrs+'h';
+    statTileRefs.uptime.captionEl.querySelector('span').textContent = 'since last reboot · '+pad2(mins)+'m';
+  }
+
+  /* ============ top bar ============ */
+  function refreshTopBar(){
+    var now = virtualNow();
+    byId('clockTime').textContent = fmtClock(now);
+    byId('clockDate').textContent = fmtDateLabel(now);
+    var status = overallStatus();
+    var pillHost = byId('systemStatusPill');
+    pillHost.innerHTML = '';
+    var newPill = statusPill(status);
+    var label = newPill.querySelector('span:last-child');
+    label.textContent = status==='good' ? 'NOMINAL' : status.toUpperCase();
+    pillHost.replaceWith(newPill);
+    newPill.id = 'systemStatusPill';
+  }
+
+  /* ============ event log ============ */
+  function buildMergedLog(){
+    var items = SEED.events.map(function(e){
+      return { t:e.t, severity:e.severity, module:e.module, message:e.message, type:e.type };
+    });
+    SEED.modules.forEach(function(m){
+      if(!m.scans) return;
+      m.scans.forEach(function(s){
+        items.push({
+          t: s.t,
+          severity: s.authorized ? 'info' : 'warning',
+          module: 'Access Control',
+          type: 'access',
+          message: (s.authorized ? 'Badge '+s.card_uid+' ('+s.user_name+') granted access.' : 'Unrecognized badge '+s.card_uid+' presented — access denied.')
+        });
+      });
+    });
+    items.sort(function(a,b){ return new Date(b.t) - new Date(a.t); });
+    return items;
+  }
+
+  var logItems = buildMergedLog();
+
+  function renderLog(){
+    var list = byId('logList');
+    list.innerHTML = '';
+    logItems.forEach(function(it){
+      var row = el('div','log-row sev-'+it.severity);
+      var sev = el('div','log-sev');
+      sev.style.color = 'var(--'+it.severity+')';
+      sev.innerHTML = iconHtml(it.severity);
+      var timeWrap = el('div','log-time');
+      var tline = document.createElement('div'); tline.textContent = fmtClockShort(it.t)+' UTC';
+      var ago = el('div','ago'); ago.textContent = agoLabel(it.t);
+      timeWrap.appendChild(tline); timeWrap.appendChild(ago);
+      var modWrap = el('div','log-module');
+      var mname = el('div','log-module-name'); mname.textContent = it.module;
+      var mtype = el('div','log-type'); mtype.textContent = it.type;
+      modWrap.appendChild(mname); modWrap.appendChild(mtype);
+      var msg = el('div','log-msg'); msg.textContent = it.message;
+      row.appendChild(sev); row.appendChild(timeWrap); row.appendChild(modWrap); row.appendChild(msg);
+      list.appendChild(row);
+    });
+    byId('logSub').textContent = logItems.length+' entries · system events + access scans, newest first';
+  }
+
+  function refreshLogTimes(){
+    var list = byId('logList');
+    var rows = list.querySelectorAll('.log-row');
+    rows.forEach(function(row, i){
+      var it = logItems[i];
+      if(!it) return;
+      var ago = row.querySelector('.ago');
+      if(ago) ago.textContent = agoLabel(it.t);
+    });
+  }
+
+  function pushLogItem(it){
+    logItems.unshift(it);
+    renderLog();
+  }
+
+  /* ============ marketplace ============ */
+  function buildMarketGrid(){
+    var grid = byId('marketGrid');
+    grid.innerHTML = '';
+    SEED.marketplace.forEach(function(p){
+      grid.appendChild(buildMarketCard(p));
+    });
+    byId('marketCountLabel').textContent = '('+SEED.marketplace.length+')';
+  }
+
+  function buildMarketCard(p){
+    var card = el('div','market-card');
+    var head = el('div','market-head');
+    var nameWrap = el('div');
+    var name = el('div','market-name'); name.textContent = p.name;
+    var chip = el('div','market-chip'); chip.textContent = p.sensor_chip;
+    nameWrap.appendChild(name); nameWrap.appendChild(chip);
+    var badges = el('div','market-badges');
+    var offBadge = el('span','badge '+(p.official?'official':'community'));
+    offBadge.textContent = p.official ? 'Official' : 'Community';
+    badges.appendChild(offBadge);
+    var catBadge = el('span','badge'); catBadge.textContent = p.category;
+    badges.appendChild(catBadge);
+    head.appendChild(nameWrap);
+    card.appendChild(head);
+    card.appendChild(badges);
+
+    var desc = el('div','market-desc'); desc.textContent = p.description;
+    card.appendChild(desc);
+
+    var foot = el('div','market-foot');
+    var meta = el('div','market-meta');
+    var authorLine = document.createElement('div');
+    authorLine.innerHTML = '';
+    var authorLabel = document.createElement('span'); authorLabel.textContent = 'by ';
+    var authorB = document.createElement('b'); authorB.textContent = p.author;
+    authorLine.appendChild(authorLabel); authorLine.appendChild(authorB);
+    meta.appendChild(authorLine);
+    var installLine = document.createElement('div');
+    installLine.textContent = p.installs!=null ? fmtInt(p.installs)+' installs' : 'pre-installed on this hub';
+    meta.appendChild(installLine);
+
+    var btn;
+    if(p.installed){
+      btn = el('button','btn installed');
+      btn.disabled = true;
+      btn.innerHTML = iconHtml('check');
+      var lbl = document.createElement('span'); lbl.textContent = 'Installed';
+      btn.appendChild(lbl);
+    } else {
+      btn = el('button','btn');
+      btn.innerHTML = iconHtml('plus');
+      var lbl2 = document.createElement('span'); lbl2.textContent = 'Install';
+      btn.appendChild(lbl2);
+      btn.addEventListener('click', function(){
+        btn.classList.add('installed');
+        btn.disabled = true;
+        btn.innerHTML = '';
+        btn.innerHTML = iconHtml('check');
+        var lbl3 = document.createElement('span'); lbl3.textContent = 'Installed';
+        btn.appendChild(lbl3);
+        pushLogItem({
+          t: virtualNow().toISOString(),
+          severity: 'info',
+          module: p.name,
+          type: 'plugin',
+          message: "Plugin '"+p.slug+"' v"+p.version+' installed from '+p.author+' — awaiting slot assignment.'
+        });
+      });
+    }
+    foot.appendChild(meta);
+    foot.appendChild(btn);
+    card.appendChild(foot);
+    return card;
+  }
+
+  /* ============ live simulation ============ */
+  function tickModuleData(){
+    modules.forEach(function(m){
+      if(m.slug === 'access-control') return;
+      var cfg = SIM_CFG[m.slug];
+      if(!cfg) return;
+      var vals = m.series.map(function(p){ return p.v; });
+      var nextV = nextValue(vals, cfg);
+      var lastT = new Date(m.series[m.series.length-1].t);
+      var nextT = new Date(lastT.getTime() + 2*60000);
+      var point = { t: nextT.toISOString(), v: nextV };
+      if(cfg.v2){
+        var vals2 = m.series.map(function(p){ return p.v2; });
+        point.v2 = nextValue(vals2, cfg.v2);
+      }
+      m.series.push(point);
+      if(m.series.length > 90) m.series.shift();
+      m.latest = nextV;
+      m.status = computeStatus(nextV, m.def.thresholds);
+
+      var rv = byId('val-'+m.slug);
+      if(rv) rv.textContent = fmtNum(nextV, decimalsFor(m.slug));
+      if(point.v2!=null){
+        var rv2 = byId('val2-'+m.slug);
+        if(rv2) rv2.innerHTML = '<b>'+fmtNum(point.v2,1)+'</b> '+m.def.secondary_unit;
+      }
+      var pillHost = byId('pill-'+m.slug);
+      if(pillHost){
+        var np = statusPill(m.status);
+        pillHost.replaceWith(np);
+        np.id = 'pill-'+m.slug;
+      }
+
+      if(m.chartApi) m.chartApi.update(m.series.map(function(p){ return {t:p.t, v:p.v}; }));
+      if(m.chartApi2) m.chartApi2.update(m.series.map(function(p){ return {t:p.t, v:p.v2}; }));
+    });
+    refreshAlertTile();
+    refreshTopBar();
+  }
+
+  /* ============ boot ============ */
+  function boot(){
+    byId('hubName').textContent = SEED.core.name;
+    byId('fwChip').innerHTML = 'FW <b>'+SEED.core.firmware+'</b>';
+    byId('slotsChip').innerHTML = 'SLOTS <b>'+SEED.core.slots_used+'/'+SEED.core.slots_total+'</b>';
+    byId('moduleCountLabel').textContent = '('+modules.length+')';
+    byId('footStamp').textContent = 'snapshot '+SEED.generated_at;
+
+    buildStatTiles();
+
+    var grid = byId('moduleGrid');
+    modules.forEach(function(m){ grid.appendChild(buildModuleCard(m)); });
+
+    renderLog();
+    buildMarketGrid();
+    refreshTopBar();
+    refreshUptimeTile();
+
+    if(!reduceMotion){
+      byId('liveDot').classList.add('animate');
+      setInterval(function(){
+        refreshTopBar();
+        refreshUptimeTile();
+        refreshLogTimes();
+      }, 1000);
+      setInterval(tickModuleData, 3600);
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>

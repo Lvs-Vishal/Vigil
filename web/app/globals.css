@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/*
+  Nodeframe — deliberate single-theme dark design ("dark technical console").
+  This is not a light page with a dark mode bolted on; the palette is the
+  product's identity, so every color is declared explicitly and there is no
+  prefers-color-scheme branch. See README/design notes for rationale.
+*/
+
+:root {
+  color-scheme: dark;
+
+  --plane: #0a0f0d;
+  --surface: #111815;
+  --surface-2: #17211c;
+  --border: rgba(190, 215, 200, 0.12);
+  --border-strong: rgba(190, 215, 200, 0.22);
+
+  --ink: #f2efe6;
+  --ink-secondary: #a3ad9f;
+  --ink-muted: #69746c;
+
+  --copper: #d97a3f;
+  --copper-strong: #f0925a;
+  --teal: #2bd6a4;
+
+  --good: #35c26b;
+  --warning: #f0b429;
+  --critical: #e2564e;
+
+  --series-1: #3987e5; /* blue */
+  --series-2: #d97a3f; /* copper */
+  --series-3: #2bd6a4; /* teal */
+  --series-4: #c98500; /* yellow */
+  --series-5: #d55181; /* magenta */
+  --series-6: #9085e9; /* violet */
+  --series-7: #e66767; /* red */
+  --series-8: #6da7ec; /* light blue */
+
+  --font-display: "Archivo", "Arial Black", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@theme inline {
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-copper: var(--copper);
+  --color-copper-strong: var(--copper-strong);
+  --color-teal: var(--teal);
+
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
+
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--plane);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.hairline-top {
+  border-top: 1px solid var(--border);
+}

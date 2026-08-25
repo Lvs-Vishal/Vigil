@@ -1,0 +1,1250 @@
+<title>Nodeframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  /* ======================================================
+     TOKENS — dark technical console, warm copper + PCB-teal
+     Deliberate single-theme design (per brief). Every color
+     is a custom property; nothing is a bare literal in rules.
+     ====================================================== */
+  :root{
+    --plane:        #0a0f0d;
+    --plane-rgb:    10, 15, 13;
+    --surface:      #111815;
+    --surface-2:    #17211c;
+    --surface-3:    #1c2820;
+    --border:       rgba(190, 215, 200, 0.12);
+    --border-strong:rgba(190, 215, 200, 0.22);
+
+    --ink:          #f2efe6;
+    --ink-secondary:#a3ad9f;
+    --ink-muted:    #69746c;
+
+    --copper:       #d97a3f;
+    --copper-strong:#f0925a;
+    --copper-dim:   rgba(217, 122, 63, 0.14);
+    --teal:         #2bd6a4;
+    --teal-rgb:     43, 214, 164;
+    --teal-dim:     rgba(43, 214, 164, 0.14);
+
+    --good:      #35c26b;
+    --warning:   #f0b429;
+    --critical:  #e2564e;
+    --good-dim:      rgba(53, 194, 107, 0.14);
+    --warning-dim:   rgba(240, 180, 41, 0.14);
+    --critical-dim:  rgba(226, 86, 78, 0.14);
+
+    --series-1: #3987e5;
+    --series-2: #d97a3f;
+    --series-3: #2bd6a4;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #9085e9;
+    --series-7: #e66767;
+    --series-8: #6da7ec;
+
+    --font-display: 'Archivo', 'Arial Black', sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+
+    --container: 1180px;
+    --edge: clamp(20px, 4.5vw, 56px);
+  }
+
+  *, *::before, *::after{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior: auto; } }
+
+  body{
+    margin: 0;
+    background: var(--plane);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection{ background: var(--copper); color: var(--plane); }
+
+  a{ color: inherit; }
+  img, svg{ display: block; max-width: 100%; }
+
+  h1, h2, h3, h4{
+    font-family: var(--font-display);
+    font-weight: 800;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  p{ margin: 0; }
+
+  .mono{ font-family: var(--font-mono); }
+  .tab-nums{ font-variant-numeric: tabular-nums; }
+
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 0.55em;
+    margin: 0 0 0.9em;
+  }
+  .eyebrow::before{ content: "//"; color: var(--ink-muted); }
+
+  .container{
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: var(--edge);
+  }
+
+  section{ position: relative; }
+
+  .hairline-top{ border-top: 1px solid var(--border); }
+
+  /* focus state — copper glow, never a shadow-only default */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--copper-strong);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* ---------- reveal-on-scroll (guarded; visible by default) ---------- */
+  .reveal{ opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: no-preference){
+    .reveal[data-armed]{ opacity: 0; transform: translateY(18px); }
+    .reveal.reveal-in{
+      opacity: 1; transform: none;
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+  }
+
+  /* ======================= TOPBAR ======================= */
+  .topbar{
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(var(--plane-rgb), 0.86);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar .container{
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .brand{
+    display: flex; align-items: center; gap: 0.6em;
+    font-family: var(--font-display); font-weight: 900;
+    font-size: 1.05rem; letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+  .brand-mark{
+    width: 22px; height: 22px; flex: none;
+    border: 1.5px solid var(--copper);
+    border-radius: 4px;
+    position: relative;
+  }
+  .brand-mark::before, .brand-mark::after{
+    content: ""; position: absolute; background: var(--copper);
+  }
+  .brand-mark::before{ inset: 4px 4px 4px 4px; background: none; border: 1px solid var(--teal); border-radius: 2px; }
+  .brand-mark::after{ width: 3px; height: 3px; top: -1.5px; left: -1.5px; border-radius: 50%; }
+  .topnav{ display: flex; align-items: center; gap: 28px; }
+  .topnav a{
+    text-decoration: none; color: var(--ink-secondary);
+    font-size: 0.86rem; font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+    transition: color 0.15s ease;
+  }
+  .topnav a:hover{ color: var(--teal); }
+  .topnav-links{ display: flex; gap: 24px; }
+  @media (max-width: 820px){ .topnav-links{ display: none; } }
+
+  .btn{
+    display: inline-flex; align-items: center; gap: 0.55em;
+    font-family: var(--font-mono); font-size: 0.86rem; font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 0.7em 1.15em;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  .btn-sm{ padding: 0.55em 0.9em; font-size: 0.78rem; }
+  .btn-primary{ background: var(--copper); color: var(--plane); border-color: var(--copper); font-weight: 500; }
+  .btn-primary:hover{ background: var(--copper-strong); border-color: var(--copper-strong); }
+  .btn-ghost{ background: transparent; color: var(--ink); border-color: var(--border-strong); }
+  .btn-ghost:hover{ border-color: var(--teal); color: var(--teal); }
+  .btn:active{ transform: translateY(1px); }
+  .btn svg{ width: 15px; height: 15px; }
+
+  /* ======================= HERO ======================= */
+  .hero{ padding: clamp(48px, 8vw, 96px) 0 clamp(40px, 6vw, 72px); }
+  .hero-top{
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
+  @media (max-width: 980px){ .hero-top{ grid-template-columns: 1fr; } }
+
+  .hero-copy .eyebrow{ display: inline-flex; }
+  .live-dot{
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); flex: none;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .live-dot{ animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse{
+      0%, 100%{ box-shadow: 0 0 0 0 rgba(var(--teal-rgb), 0.5); }
+      50%{ box-shadow: 0 0 0 5px rgba(var(--teal-rgb), 0); }
+    }
+  }
+
+  .hero-headline{
+    font-size: clamp(2.4rem, 5.4vw, 4.4rem);
+    line-height: 0.98;
+    margin-bottom: 0.5em;
+  }
+  .hero-sub{
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    color: var(--ink-secondary);
+    max-width: 46ch;
+    margin-bottom: 1.9em;
+  }
+  .hero-ctas{ display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 2.4em; }
+
+  .hero-stats{
+    display: flex; gap: clamp(20px, 3vw, 40px); flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 1.4em;
+  }
+  .hero-stat dt{
+    font-family: var(--font-mono); font-size: 0.68rem;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--ink-muted); margin-bottom: 0.4em;
+  }
+  .hero-stat dd{
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 1.5rem; margin: 0;
+  }
+  .hero-stat dd span{ font-family: var(--font-mono); font-size: 0.9rem; font-weight: 400; color: var(--ink-secondary); }
+
+  /* ---- hero schematic panel ---- */
+  .schematic{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 16px 14px;
+  }
+  .schematic-head{
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .schematic-head h3{
+    font-family: var(--font-mono); font-weight: 500; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-muted);
+  }
+  .schematic-head .badge{
+    font-family: var(--font-mono); font-size: 0.68rem; color: var(--teal);
+  }
+
+  svg text{ font-family: var(--font-mono); fill: var(--ink); }
+  .slot-node{ cursor: pointer; }
+  .slot-node rect.node-box{
+    fill: var(--surface-2);
+    stroke: var(--border-strong);
+    stroke-width: 1;
+    transition: stroke 0.15s ease, fill 0.15s ease;
+  }
+  .slot-node:hover rect.node-box, .slot-node:focus-visible rect.node-box{
+    stroke: var(--copper-strong);
+    fill: var(--surface-3);
+  }
+  .slot-node:focus-visible{ outline: none; }
+  .slot-node .slot-id{ font-size: 11px; font-weight: 500; }
+  .slot-node .slot-label{ font-family: var(--font-body); font-size: 10.5px; fill: var(--ink-secondary); }
+  .bus-trunk, .bus-stub{ stroke: var(--border-strong); stroke-width: 1.5; fill: none; }
+  .bus-tap{ fill: var(--ink-muted); }
+  .hub-box{ fill: var(--surface-2); stroke: var(--copper); stroke-width: 1.4; }
+  .hub-label{ font-size: 12px; font-weight: 500; }
+  .hub-sub{ font-size: 9.5px; fill: var(--ink-muted); }
+
+  @media (prefers-reduced-motion: no-preference){
+    .slot-node{ animation: slotIn 0.5s cubic-bezier(.2,.8,.3,1) both; animation-delay: calc(var(--d, 0) * 110ms + 200ms); }
+    .bus-stub{ animation: stubIn 0.4s ease both; animation-delay: calc(var(--d, 0) * 110ms); }
+    @keyframes slotIn{ from{ opacity: 0; transform: scale(0.92); } to{ opacity: 1; transform: scale(1); } }
+    @keyframes stubIn{ from{ stroke-dashoffset: 130; } to{ stroke-dashoffset: 0; } }
+    .bus-stub{ stroke-dasharray: 130; stroke-dashoffset: 0; }
+  }
+
+  .inspector{
+    margin-top: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    min-height: 108px;
+  }
+  .inspector-hint{ color: var(--ink-muted); font-family: var(--font-mono); font-size: 0.78rem; }
+  .inspector-grid{
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 14px;
+  }
+  .inspector-field dt{
+    font-family: var(--font-mono); font-size: 0.63rem; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 2px;
+  }
+  .inspector-field dd{
+    margin: 0; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .schematic figcaption{
+    margin-top: 12px; font-size: 0.76rem; color: var(--ink-muted);
+    font-family: var(--font-mono); line-height: 1.5;
+  }
+
+  /* ======================= SECTION SHELL ======================= */
+  .section{ padding: clamp(56px, 8vw, 108px) 0; }
+  .section-head{ max-width: 640px; margin-bottom: clamp(28px, 4vw, 48px); }
+  .section-head h2{ font-size: clamp(1.7rem, 3vw, 2.5rem); margin-bottom: 0.5em; }
+  .section-head p{ color: var(--ink-secondary); font-size: 1.05rem; max-width: 58ch; }
+
+  /* ======================= PIVOT ======================= */
+  .pivot-grid{
+    display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 4vw, 56px);
+  }
+  @media (max-width: 860px){ .pivot-grid{ grid-template-columns: 1fr; } }
+  .pivot-col h3{ font-size: 1.25rem; margin-bottom: 0.6em; }
+  .pivot-col p{ color: var(--ink-secondary); margin-bottom: 1em; }
+  .pivot-tag{
+    display: inline-block; font-family: var(--font-mono); font-size: 0.68rem;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 0.3em 0.6em; border-radius: 4px; margin-bottom: 1em;
+  }
+  .pivot-tag.old{ color: var(--ink-muted); border: 1px solid var(--border-strong); }
+  .pivot-tag.new{ color: var(--teal); background: var(--teal-dim); }
+
+  .code-block{
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px 16px;
+    font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.85;
+  }
+  .code-block .fname{ color: var(--ink-muted); margin-bottom: 0.5em; display: block; }
+  .code-block .tbl{ color: var(--ink); }
+  .code-block .tbl.new-schema{ color: var(--teal); }
+  .code-block .comment{ color: var(--ink-muted); display: block; margin-top: 0.8em; }
+
+  .pullquote{
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-strong);
+    margin-top: clamp(20px, 3vw, 36px);
+    padding-top: clamp(20px, 3vw, 36px);
+    display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;
+  }
+  .pullquote .rule{ width: 3px; background: var(--copper); align-self: stretch; border-radius: 2px; }
+  .pullquote blockquote{
+    margin: 0; font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(1.15rem, 2vw, 1.55rem); line-height: 1.35;
+    color: var(--ink); text-wrap: balance;
+  }
+  .pullquote cite{ display: block; margin-top: 0.7em; font-style: normal; font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-muted); }
+
+  /* ======================= HOW IT WORKS ======================= */
+  .steps{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  @media (max-width: 860px){ .steps{ grid-template-columns: 1fr; } }
+  .step{ background: var(--surface); padding: clamp(22px, 3vw, 32px); }
+  .step .num{
+    font-family: var(--font-mono); font-size: 0.85rem; color: var(--copper);
+    margin-bottom: 1.2em; display: block;
+  }
+  .step h3{ font-size: 1.15rem; margin-bottom: 0.6em; }
+  .step p{ color: var(--ink-secondary); font-size: 0.95rem; }
+  .step .tables{ margin-top: 1em; display: flex; flex-wrap: wrap; gap: 6px; }
+  .table-chip{
+    font-family: var(--font-mono); font-size: 0.7rem; color: var(--teal);
+    background: var(--teal-dim); padding: 0.3em 0.55em; border-radius: 4px;
+  }
+
+  /* ======================= MODULE GRID ======================= */
+  .modules-layout{ display: grid; grid-template-columns: 1fr; gap: clamp(28px, 4vw, 40px); }
+  .module-grid{
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+    gap: 14px;
+  }
+  .mcard{
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .mcard:hover{ border-color: var(--border-strong); background: var(--surface-2); }
+  .mcard-top{ display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .mcard-id{ display: flex; align-items: center; gap: 8px; }
+  .series-dot{ width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .mcard-slot{ font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted); letter-spacing: 0.03em; }
+  .status-pill{
+    font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0.3em 0.55em; border-radius: 4px;
+    display: inline-flex; align-items: center; gap: 0.45em; white-space: nowrap;
+  }
+  .status-pill::before{ content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .status-pill.good{ color: var(--good); background: var(--good-dim); }
+  .status-pill.warning{ color: var(--warning); background: var(--warning-dim); }
+  .status-pill.critical{ color: var(--critical); background: var(--critical-dim); }
+
+  .mcard-label{ font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+  .mcard-chip{ font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-muted); }
+
+  .mcard-reading{ display: flex; align-items: baseline; gap: 0.35em; margin-top: 2px; }
+  .mcard-reading .val{ font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; }
+  .mcard-reading .unit{ font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-secondary); }
+  .mcard-note{ font-size: 0.78rem; color: var(--ink-muted); line-height: 1.5; }
+  .mcard-note.warn{ color: var(--warning); }
+
+  .spark-wrap{ position: relative; margin-top: 2px; }
+  .spark-wrap svg{ width: 100%; height: 48px; display: block; overflow: visible; }
+  .spark-row{ display: flex; gap: 10px; }
+  .spark-col{ flex: 1; min-width: 0; }
+  .spark-col .mini-label{ font-family: var(--font-mono); font-size: 0.6rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+
+  .scan-list{ display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+  .scan-row{ display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 0.72rem; }
+  .scan-row .who{ color: var(--ink-secondary); }
+  .scan-row .who.denied{ color: var(--critical); }
+  .scan-row .t{ color: var(--ink-muted); flex: none; }
+
+  .spark-tip{
+    position: fixed; z-index: 60; pointer-events: none;
+    background: var(--surface-3); border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 6px 9px; font-family: var(--font-mono);
+    font-size: 0.72rem; color: var(--ink); white-space: nowrap;
+    opacity: 0; transform: translate(-50%, calc(-100% - 10px));
+    transition: opacity 0.1s ease;
+  }
+  .spark-tip.show{ opacity: 1; }
+  .spark-tip .t{ color: var(--ink-muted); margin-right: 0.5em; }
+
+  /* ---- event log ---- */
+  .event-log{
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px 18px;
+  }
+  .event-log h3{
+    font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--ink-muted); font-weight: 500; margin-bottom: 12px;
+  }
+  .event-row{
+    display: grid; grid-template-columns: 60px 14px 100px 1fr; gap: 10px;
+    align-items: baseline; padding: 8px 0; border-top: 1px solid var(--border);
+    font-size: 0.83rem;
+  }
+  .event-row:first-of-type{ border-top: none; }
+  .event-row .t{ font-family: var(--font-mono); color: var(--ink-muted); font-size: 0.76rem; }
+  .event-sev{ width: 7px; height: 7px; border-radius: 50%; align-self: center; }
+  .event-sev.critical{ background: var(--critical); }
+  .event-sev.warning{ background: var(--warning); }
+  .event-sev.info{ background: var(--ink-muted); }
+  .event-row .module{ font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-secondary); }
+  .event-row .msg{ color: var(--ink); }
+
+  /* ======================= MARKETPLACE ======================= */
+  .market-grid{
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+    gap: 14px;
+  }
+  .pcard{
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 15px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pcard.is-installed{ border-color: var(--border-strong); }
+  .pcard-top{ display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .pcard-name{ font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .origin-badge{
+    font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0.28em 0.5em; border-radius: 4px; white-space: nowrap;
+  }
+  .origin-badge.official{ color: var(--copper-strong); background: var(--copper-dim); }
+  .origin-badge.community{ color: var(--ink-secondary); border: 1px solid var(--border-strong); }
+  .pcard-chip{ font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted); }
+  .pcard-desc{ font-size: 0.82rem; color: var(--ink-secondary); flex: 1; }
+  .pcard-foot{ display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+  .pcard-author{ font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-muted); }
+  .pcard-installs{ font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-muted); }
+  .pcard-state{
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.03em;
+  }
+  .pcard-state.installed{ color: var(--teal); }
+  .pcard-state a{ color: var(--copper-strong); text-decoration: none; }
+  .pcard-state a:hover{ text-decoration: underline; }
+
+  /* ======================= ARCHITECTURE ======================= */
+  .arch-figure{ margin: 0; }
+  .arch-figure svg{ width: 100%; height: auto; }
+  .arch-figure figcaption{
+    margin-top: 16px; color: var(--ink-muted); font-size: 0.85rem;
+    max-width: 68ch; font-family: var(--font-mono); line-height: 1.6;
+  }
+  .arch-box-label{ font-family: var(--font-mono); font-size: 13px; font-weight: 500; fill: var(--ink); }
+  .arch-box-sub{ font-family: var(--font-body); font-size: 10.5px; fill: var(--ink-secondary); }
+  .arch-arrow-label{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--ink-secondary); }
+  .arch-table-label{ font-family: var(--font-mono); font-size: 11px; fill: var(--teal); }
+
+  /* ======================= SPEC ======================= */
+  .spec-wrap{ display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 4vw, 64px); align-items: start; }
+  @media (max-width: 900px){ .spec-wrap{ grid-template-columns: 1fr; } }
+  .spec-table{ width: 100%; border-collapse: collapse; }
+  .spec-table tr{ border-top: 1px solid var(--border); }
+  .spec-table tr:first-child{ border-top: none; }
+  .spec-table td{ padding: 13px 0; vertical-align: baseline; }
+  .spec-table td:first-child{
+    font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-muted);
+    text-transform: uppercase; letter-spacing: 0.05em; width: 42%;
+  }
+  .spec-table td:last-child{ font-family: var(--font-mono); font-size: 0.92rem; }
+  .spec-panel{
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 22px; display: flex; flex-direction: column; gap: 18px;
+  }
+  .spec-panel .row{ display: flex; justify-content: space-between; align-items: baseline; }
+  .spec-panel .k{ font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .spec-panel .v{ font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+  .spec-panel .v small{ font-family: var(--font-mono); font-size: 0.85rem; font-weight: 400; color: var(--ink-secondary); }
+  .bus-diagram{ width: 100%; height: auto; margin-top: 4px; }
+
+  /* ======================= COMMUNITY / FOOTER ======================= */
+  .community{
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .community-inner{
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(28px, 4vw, 56px);
+    align-items: center;
+  }
+  @media (max-width: 860px){ .community-inner{ grid-template-columns: 1fr; } }
+  .community h2{ font-size: clamp(1.6rem, 3vw, 2.2rem); margin-bottom: 0.5em; }
+  .community p{ color: var(--ink-secondary); max-width: 56ch; margin-bottom: 1.4em; }
+  .community-ctas{ display: flex; gap: 12px; flex-wrap: wrap; }
+  .license-note{ display: flex; align-items: center; gap: 0.6em; margin-top: 1.6em; font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-muted); }
+  .license-badge{
+    border: 1px solid var(--border-strong); border-radius: 4px;
+    padding: 0.25em 0.55em; font-size: 0.68rem; letter-spacing: 0.04em;
+  }
+  .manifest-preview{
+    font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.8;
+    background: var(--plane); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 16px 18px;
+  }
+  .manifest-preview .k2{ color: var(--ink-muted); }
+  .manifest-preview .s{ color: var(--teal); }
+  .manifest-preview .n{ color: var(--copper-strong); }
+
+  footer.site-footer{ padding: clamp(28px, 4vw, 40px) 0; }
+  .footer-inner{ display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .footer-inner .fmono{ font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-muted); }
+  .footer-nav{ display: flex; gap: 20px; flex-wrap: wrap; }
+  .footer-nav a{ text-decoration: none; color: var(--ink-secondary); font-family: var(--font-mono); font-size: 0.78rem; }
+  .footer-nav a:hover{ color: var(--teal); }
+</style>
+
+<div class="topbar">
+  <div class="container">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      NODEFRAME
+    </a>
+    <nav class="topnav">
+      <div class="topnav-links">
+        <a href="#how">How it works</a>
+        <a href="#modules">Modules</a>
+        <a href="#marketplace">Marketplace</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#spec">Spec</a>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="javascript:void(0)" aria-label="View source on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.2h4.2M2 8h12M2 12.8h7.4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+        GitHub
+      </a>
+    </nav>
+  </div>
+</div>
+
+<main id="top">
+  <!-- ======================= HERO ======================= -->
+  <section class="hero">
+    <div class="container hero-top">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>NODEFRAME CORE HUB &middot; FIRMWARE <span id="fw-version">&mdash;</span></p>
+        <h1 class="hero-headline">Swap the sensor.<br>Not the firmware.</h1>
+        <p class="hero-sub">Nodeframe is a modular sensor framework built around one hub: eight physical slots, one plugin manifest per module, and a dashboard that renders itself around whatever's plugged in &mdash; official or community-built.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="javascript:void(0)">
+            Open the dashboard
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9m0 0-3.5-3.5M12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="javascript:void(0)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.2h4.2M2 8h12M2 12.8h7.4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+            View on GitHub
+          </a>
+        </div>
+        <dl class="hero-stats">
+          <div class="hero-stat">
+            <dt>Slots populated</dt>
+            <dd id="stat-slots" class="tab-nums">&mdash;</dd>
+          </div>
+          <div class="hero-stat">
+            <dt>Slot groups</dt>
+            <dd class="tab-nums">3 <span>(A / B / C)</span></dd>
+          </div>
+          <div class="hero-stat">
+            <dt>Core uptime</dt>
+            <dd id="stat-uptime" class="tab-nums">&mdash;</dd>
+          </div>
+          <div class="hero-stat">
+            <dt>Backend tables</dt>
+            <dd class="tab-nums">4 <span>not 8</span></dd>
+          </div>
+        </dl>
+      </div>
+
+      <figure class="schematic" id="schematic">
+        <div class="schematic-head">
+          <h3>Slot bus &middot; live</h3>
+          <span class="badge tab-nums" id="schematic-count">8 / 8 active</span>
+        </div>
+        <svg id="bus-svg" viewBox="0 0 560 580" role="img" aria-label="Diagram of the Nodeframe Core Hub bus with eight module slots, A1 through A4, B1 through B3, and C1, all currently populated.">
+          <!-- populated by script -->
+        </svg>
+        <div class="inspector" id="inspector">
+          <p class="inspector-hint">Hover, focus, or tap a slot to read its manifest.</p>
+        </div>
+        <figcaption>Every slot shares one I2C line plus one analog and one digital line off a central bus &mdash; a module identifies itself over its own EEPROM the instant it's seated. Swap any of them live; nothing else on the bus needs to know.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ======================= PROBLEM -> PIVOT ======================= -->
+  <section class="section hairline-top" id="pivot">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">The predecessor</p>
+        <h2>The old repo worked. It just couldn't change its mind.</h2>
+      </div>
+      <div class="pivot-grid">
+        <div class="pivot-col">
+          <span class="pivot-tag old">Industrial IoT Safety Monitoring System</span>
+          <h3>Five sensors, soldered to fixed roles.</h3>
+          <p>One ESP32, one gas sensor, one proximity sensor, one RFID reader &mdash; each wired to a role the firmware knew about by name. Each sensor got its own hardcoded Supabase table. Swapping the gas sensor for a soil-moisture probe meant reflashing the firmware and hand-adding a table before a single reading could land anywhere.</p>
+          <div class="code-block">
+            <span class="fname">industrial-iot-safety-monitoring/</span>
+            <span class="tbl">dht11_readings</span><br>
+            <span class="tbl">mq6_readings</span><br>
+            <span class="tbl">hcsr04_readings</span><br>
+            <span class="tbl">mfrc522_scans</span><br>
+            <span class="tbl">relay_events</span>
+            <span class="comment">// new sensor type -&gt; new table + firmware rewrite</span>
+          </div>
+        </div>
+        <div class="pivot-col">
+          <span class="pivot-tag new">Nodeframe</span>
+          <h3>A sensor is just a manifest now.</h3>
+          <p>Every module carries a small plugin manifest &mdash; sensor chip, metric, unit, thresholds, dashboard widget &mdash; on its onboard EEPROM. The Core Hub reads it on connect and loads a driver. The backend is one generalized schema instead of one table per sensor type, so a new sensor type is a new row, not a new migration.</p>
+          <div class="code-block">
+            <span class="fname">nodeframe/</span>
+            <span class="tbl new-schema">plugins</span><br>
+            <span class="tbl new-schema">modules</span><br>
+            <span class="tbl new-schema">readings</span><br>
+            <span class="tbl new-schema">events</span>
+            <span class="comment">// new sensor type -&gt; one row in `plugins`</span>
+          </div>
+        </div>
+        <div class="pullquote">
+          <div class="rule" aria-hidden="true"></div>
+          <div>
+            <blockquote>&ldquo;The same way Framework's laptop lets you swap a USB-C port for an SD reader without redesigning the machine, Nodeframe lets you swap a gas sensor for a vibration sensor without rewriting firmware.&rdquo;</blockquote>
+            <cite>&mdash; the pitch, in one sentence</cite>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= HOW IT WORKS ======================= -->
+  <section class="section hairline-top" id="how">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">The mechanism</p>
+        <h2>Three moves, no reboot.</h2>
+        <p>What actually happens between seating a module in a slot and seeing its panel on the dashboard.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="num mono">01</span>
+          <h3>Module reports its manifest</h3>
+          <p>On connect, the module's onboard EEPROM hands the hub a small manifest: sensor chip, metric key, unit, warning/critical thresholds, and which dashboard widget renders it.</p>
+        </div>
+        <div class="step">
+          <span class="num mono">02</span>
+          <h3>Core Hub loads the driver</h3>
+          <p>The hub matches the manifest to a driver, starts polling the slot, and writes rows into four generalized tables &mdash; not a bespoke schema per sensor.</p>
+          <div class="tables">
+            <span class="table-chip">plugins</span>
+            <span class="table-chip">modules</span>
+            <span class="table-chip">readings</span>
+            <span class="table-chip">events</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num mono">03</span>
+          <h3>Dashboard renders itself</h3>
+          <p>The dashboard reads the manifest's widget type and draws a panel for the new module automatically &mdash; no redeploy, no new frontend code.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= LIVE MODULE GRID ======================= -->
+  <section class="section hairline-top" id="modules">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Right now</p>
+        <h2>8 modules, 3 slot groups, one bus.</h2>
+        <p id="modules-sub">Everything below is read straight off the hub's current telemetry.</p>
+      </div>
+      <div class="modules-layout">
+        <div class="module-grid" id="module-grid"></div>
+        <div class="event-log">
+          <h3>Event log</h3>
+          <div id="event-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= MARKETPLACE ======================= -->
+  <section class="section hairline-top" id="marketplace">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Plugin marketplace</p>
+        <h2 id="market-heading">Twelve manifests. Some ours, most not.</h2>
+        <p>Install one and the dashboard grows a panel for it &mdash; the same generalized tables handle whatever chip is on the other end.</p>
+      </div>
+      <div class="market-grid" id="market-grid"></div>
+    </div>
+  </section>
+
+  <!-- ======================= ARCHITECTURE ======================= -->
+  <section class="section hairline-top" id="architecture">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Architecture</p>
+        <h2>One schema for every sensor that will ever exist.</h2>
+      </div>
+      <figure class="arch-figure">
+        <svg viewBox="0 0 1080 300" role="img" aria-label="Flow diagram: a Module reports its manifest to the Core Hub, which loads a driver and writes rows into four Postgres tables — plugins, modules, readings, events — which the Dashboard queries and subscribes to in order to render a panel.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <!-- Module -->
+          <rect x="20" y="105" width="180" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <text x="110" y="142" text-anchor="middle" class="arch-box-label">MODULE</text>
+          <text x="110" y="160" text-anchor="middle" class="arch-box-sub">onboard EEPROM</text>
+          <text x="110" y="175" text-anchor="middle" class="arch-box-sub">chip &middot; metric &middot; unit &middot; widget</text>
+
+          <line x1="200" y1="150" x2="262" y2="150" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <text x="231" y="136" text-anchor="middle" class="arch-arrow-label">reports manifest</text>
+
+          <!-- Core Hub -->
+          <rect x="270" y="105" width="180" height="90" rx="8" fill="none" stroke="var(--copper)" stroke-width="1.6"/>
+          <text x="360" y="142" text-anchor="middle" class="arch-box-label">CORE HUB</text>
+          <text x="360" y="160" text-anchor="middle" class="arch-box-sub">driver loader</text>
+          <text x="360" y="175" text-anchor="middle" class="arch-box-sub">slot bus &middot; ESP32-S3</text>
+
+          <line x1="450" y1="150" x2="552" y2="150" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <text x="501" y="136" text-anchor="middle" class="arch-arrow-label">loads driver, writes rows</text>
+
+          <!-- Backend cluster -->
+          <rect x="560" y="45" width="230" height="210" rx="8" fill="none" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="4 4"/>
+          <text x="675" y="68" text-anchor="middle" class="arch-arrow-label">BACKEND &middot; SUPABASE / POSTGRES</text>
+
+          <rect x="578" y="84" width="92" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
+          <text x="624" y="107" text-anchor="middle" class="arch-table-label">plugins</text>
+          <rect x="680" y="84" width="92" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
+          <text x="726" y="107" text-anchor="middle" class="arch-table-label">modules</text>
+          <rect x="578" y="132" width="92" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
+          <text x="624" y="155" text-anchor="middle" class="arch-table-label">readings</text>
+          <rect x="680" y="132" width="92" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
+          <text x="726" y="155" text-anchor="middle" class="arch-table-label">events</text>
+          <text x="675" y="196" text-anchor="middle" class="arch-box-sub">one row per sensor TYPE</text>
+          <text x="675" y="212" text-anchor="middle" class="arch-box-sub">not one table per sensor</text>
+
+          <line x1="790" y1="150" x2="852" y2="150" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <text x="821" y="136" text-anchor="middle" class="arch-arrow-label">queries + subscribes</text>
+
+          <!-- Dashboard -->
+          <rect x="860" y="105" width="200" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <text x="960" y="142" text-anchor="middle" class="arch-box-label">DASHBOARD</text>
+          <text x="960" y="160" text-anchor="middle" class="arch-box-sub">reads widget type from manifest</text>
+          <text x="960" y="175" text-anchor="middle" class="arch-box-sub">auto-renders a panel</text>
+        </svg>
+        <figcaption>The mechanism that replaces a hardcoded table per sensor: a manifest travels from module to hub to four generalized tables, and the dashboard renders off the same manifest it started from.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ======================= SPEC ======================= -->
+  <section class="section hairline-top" id="spec">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">The hub</p>
+        <h2>Nodeframe Core Hub</h2>
+      </div>
+      <div class="spec-wrap">
+        <table class="spec-table">
+          <tbody>
+            <tr><td>MCU</td><td>ESP32-S3</td></tr>
+            <tr><td>Firmware</td><td id="spec-fw">&mdash;</td></tr>
+            <tr><td>Slots</td><td>8, across 3 groups &mdash; A1&ndash;A4, B1&ndash;B3, C1</td></tr>
+            <tr><td>Shared bus</td><td>1&times; I2C + 1&times; analog line + 1&times; digital line per slot</td></tr>
+            <tr><td>Module ID</td><td>per-module EEPROM, auto-detected on connect</td></tr>
+            <tr><td>Backend</td><td>Supabase / Postgres &mdash; 4 tables</td></tr>
+            <tr><td>Uptime</td><td id="spec-uptime">&mdash;</td></tr>
+          </tbody>
+        </table>
+        <div class="spec-panel">
+          <div class="row"><span class="k">Slots used</span><span class="v tab-nums" id="spec-slots">&mdash;</span></div>
+          <div class="row"><span class="k">Official modules</span><span class="v tab-nums" id="spec-official">&mdash;</span></div>
+          <div class="row"><span class="k">Community modules</span><span class="v tab-nums" id="spec-community">&mdash;</span></div>
+          <svg class="bus-diagram" viewBox="0 0 320 60" role="img" aria-label="Each slot carries one shared I2C line and one dedicated analog and digital line back to the Core Hub.">
+            <line x1="10" y1="12" x2="310" y2="12" stroke="var(--copper)" stroke-width="1.6"/>
+            <text x="0" y="9" class="arch-box-sub">I2C (shared)</text>
+            <line x1="10" y1="30" x2="310" y2="30" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+            <text x="0" y="27" class="arch-box-sub">analog (per slot)</text>
+            <line x1="10" y1="48" x2="310" y2="48" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+            <text x="0" y="45" class="arch-box-sub">digital (per slot)</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= COMMUNITY / CTA ======================= -->
+  <section class="community" id="community">
+    <div class="container community-inner section" style="padding-block: clamp(48px, 7vw, 80px);">
+      <div>
+        <p class="eyebrow">Write one</p>
+        <h2>Build the plugin your sensor deserves.</h2>
+        <p>A plugin is a manifest and a driver &mdash; describe the chip, the metric, the unit, the thresholds, pick a widget, and submit it to the marketplace. No core firmware changes, no schema review.</p>
+        <div class="community-ctas">
+          <a class="btn btn-primary" href="javascript:void(0)">Submit a plugin</a>
+          <a class="btn btn-ghost" href="javascript:void(0)">Read the manifest spec</a>
+        </div>
+        <div class="license-note">
+          <span class="license-badge">MIT</span>
+          <span>Nodeframe is MIT-licensed, same as the repo it replaced.</span>
+        </div>
+      </div>
+      <div class="manifest-preview mono">
+        <span class="k2">// manifest.json</span><br>
+        {<br>
+        &nbsp;&nbsp;<span class="s">"chip"</span>: <span class="s">"YOUR-SENSOR-01"</span>,<br>
+        &nbsp;&nbsp;<span class="s">"metric"</span>: <span class="s">"your_metric"</span>,<br>
+        &nbsp;&nbsp;<span class="s">"unit"</span>: <span class="s">"units"</span>,<br>
+        &nbsp;&nbsp;<span class="s">"warn_above"</span>: <span class="n">0</span>,<br>
+        &nbsp;&nbsp;<span class="s">"crit_above"</span>: <span class="n">0</span>,<br>
+        &nbsp;&nbsp;<span class="s">"widget"</span>: <span class="s">"sparkline"</span><br>
+        }
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <span class="fmono">Nodeframe &middot; hardware hackathon build &middot; MIT licensed</span>
+    <nav class="footer-nav">
+      <a href="javascript:void(0)">Docs</a>
+      <a href="javascript:void(0)">Marketplace</a>
+      <a href="javascript:void(0)">Dashboard</a>
+      <a href="javascript:void(0)">GitHub</a>
+      <a href="javascript:void(0)">License</a>
+    </nav>
+  </div>
+</footer>
+
+<script type="application/json" id="seed-data">{"core":{"name":"Nodeframe Core Hub","firmware":"v2.4.1","uptime_hours":214,"slots_total":8,"slots_used":8},"generatedAt":"09:42","modules":[{"slug":"ambient-climate","label":"Ambient Climate","slot":"A1","group":"A","chip":"DHT11","author":"nodeframe-core","official":true,"status":"good","connectedAt":"2026-08-09T09:42:00Z","series_idx":1,"metricKey":"temperature","unit":"\u00b0C","latest":22.82,"thresholds":{"warn_above":29,"crit_above":33},"metricKey2":"humidity","unit2":"%RH","series":[["07:44",24.45,47.79],["07:46",25.07,50.03],["07:48",25.62,48.53],["07:50",26.25,51.06],["07:52",26.4,52.43],["07:54",26.75,54.44],["07:56",26.92,53.72],["07:58",26.28,52.69],["08:00",26.32,55.57],["08:02",25.81,53.72],["08:04",25.44,51.72],["08:06",24.54,53.46],["08:08",24.35,51.79],["08:10",23.6,51.43],["08:12",23.25,48.72],["08:14",22.79,47.08],["08:16",21.45,46.97],["08:18",21.98,47.57],["08:20",22.64,43.93],["08:22",22.97,43.17],["08:24",23.06,43.15],["08:26",23.65,43.79],["08:28",24.42,42.73],["08:30",25.03,42.62],["08:32",25.18,41.16],["08:34",25.75,42.82],["08:36",26.24,45.46],["08:38",26.31,41.99],["08:40",26.97,45.85],["08:42",26.81,46.13],["08:44",26.9,46.12],["08:46",25.53,46.76],["08:48",25.87,46.86],["08:50",24.97,50.07],["08:52",24.24,51.74],["08:54",23.95,54.64],["08:56",23.42,51.96],["08:58",22.57,52.34],["09:00",22.79,53.1],["09:02",22.29,54.88],["09:04",22.08,53.6],["09:06",21.88,52.39],["09:08",22.67,53.7],["09:10",23.75,52.48],["09:12",23.99,51.82],["09:14",24.88,51.68],["09:16",25.2,48.27],["09:18",25.98,48.76],["09:20",26.56,47.07],["09:22",27.16,45.52],["09:24",27.22,45.01],["09:26",26.51,42.56],["09:28",26.49,44.84],["09:30",26.52,43.36],["09:32",24.96,43.0],["09:34",25.45,41.34],["09:36",24.43,42.09],["09:38",24.65,41.15],["09:40",23.32,44.59],["09:42",22.82,43.27]]},{"slug":"gas-level","label":"Gas Level","slot":"A2","group":"A","chip":"MQ-6 (LPG/Propane)","author":"nodeframe-core","official":true,"status":"good","connectedAt":"2026-08-13T09:42:00Z","series_idx":2,"metricKey":"gas_ppm","unit":"ppm","latest":207.0,"thresholds":{"warn_above":400,"crit_above":650},"series":[["07:44",159.8],["07:46",191.17],["07:48",209.33],["07:50",217.97],["07:52",218.71],["07:54",216.77],["07:56",225.75],["07:58",177.7],["08:00",176.73],["08:02",147.53],["08:04",168.36],["08:06",148.98],["08:08",146.76],["08:10",148.61],["08:12",159.2],["08:14",180.4],["08:16",197.63],["08:18",189.32],["08:20",227.47],["08:22",229.62],["08:24",205.68],["08:26",200.61],["08:28",197.07],["08:30",162.64],["08:32",160.04],["08:34",159.87],["08:36",139.21],["08:38",133.98],["08:40",135.46],["08:42",200.0],["08:44",172.42],["08:46",185.85],["08:48",203.67],["08:50",217.37],["08:52",221.51],["08:54",225.4],["08:56",196.13],["08:58",183.74],["09:00",172.54],["09:02",161.01],["09:04",139.48],["09:06",133.87],["09:08",161.66],["09:10",136.96],["09:12",171.72],["09:14",183.81],["09:16",192.21],["09:18",202.45],["09:20",236.98],["09:22",240.54],["09:24",202.4],["09:26",197.65],["09:28",193.02],["09:30",150.41],["09:32",158.47],["09:34",720],["09:36",531.0],["09:38",369.0],["09:40",261.0],["09:42",207.0]]},{"slug":"proximity","label":"Proximity","slot":"A3","group":"A","chip":"HC-SR04","author":"nodeframe-core","official":true,"status":"good","connectedAt":"2026-08-03T09:42:00Z","series_idx":3,"metricKey":"distance_cm","unit":"cm","latest":106.95,"thresholds":{"warn_below":30,"crit_below":12},"series":[["07:44",156.99],["07:46",185.07],["07:48",203.27],["07:50",198.41],["07:52",183.83],["07:54",154.26],["07:56",112.98],["07:58",91.87],["08:00",72.09],["08:02",113.52],["08:04",157.93],["08:06",186.9],["08:08",204.31],["08:10",199.21],["08:12",174.51],["08:14",136.85],["08:16",113.26],["08:18",88.26],["08:20",88.07],["08:22",103.86],["08:24",137.37],["08:26",185.35],["08:28",213.45],["08:30",189.09],["08:32",180.54],["08:34",145.45],["08:36",95.62],["08:38",99.55],["08:40",89.37],["08:42",103.34],["08:44",140.73],["08:46",168.03],["08:48",204.51],["08:50",190.54],["08:52",175.09],["08:54",145.43],["08:56",110.29],["08:58",90.66],["09:00",87.68],["09:02",106.91],["09:04",144.0],["09:06",182.63],["09:08",184.3],["09:10",204.67],["09:12",177.58],["09:14",144.47],["09:16",94.13],["09:18",87.17],["09:20",90.66],["09:22",110.99],["09:24",150.26],["09:26",174.06],["09:28",211.76],["09:30",198.34],["09:32",178.26],["09:34",143.92],["09:36",119.92],["09:38",93.7],["09:40",81.54],["09:42",106.95]]},{"slug":"ambient-light","label":"Ambient Light","slot":"B1","group":"B","chip":"BH1750","author":"community/pixel-farm","official":false,"status":"good","connectedAt":"2026-08-10T09:42:00Z","series_idx":5,"metricKey":"lux","unit":"lux","latest":274.09,"thresholds":{"warn_above":900,"crit_above":1200},"series":[["07:44",351.25],["07:46",415.47],["07:48",415.0],["07:50",470.83],["07:52",463.79],["07:54",477.27],["07:56",494.33],["07:58",557.2],["08:00",543.87],["08:02",523.38],["08:04",579.14],["08:06",472.96],["08:08",461.31],["08:10",420.9],["08:12",371.88],["08:14",397.9],["08:16",340.24],["08:18",231.8],["08:20",224.2],["08:22",216.94],["08:24",203.7],["08:26",135.1],["08:28",104.6],["08:30",113.33],["08:32",167.03],["08:34",181.54],["08:36",214.86],["08:38",214.96],["08:40",236.18],["08:42",252.0],["08:44",348.23],["08:46",386.68],["08:48",438.04],["08:50",465.57],["08:52",469.0],["08:54",529.62],["08:56",507.78],["08:58",502.49],["09:00",506.0],["09:02",496.57],["09:04",441.74],["09:06",477.67],["09:08",452.05],["09:10",404.16],["09:12",359.58],["09:14",349.3],["09:16",345.5],["09:18",267.74],["09:20",221.51],["09:22",191.45],["09:24",182.37],["09:26",137.19],["09:28",157.85],["09:30",162.52],["09:32",214.93],["09:34",207.7],["09:36",232.08],["09:38",216.37],["09:40",283.54],["09:42",274.09]]},{"slug":"vibration","label":"Vibration","slot":"B2","group":"B","chip":"ADXL345","author":"community/wrench-labs","official":false,"status":"good","connectedAt":"2026-07-14T09:42:00Z","series_idx":6,"metricKey":"vibration_g","unit":"g (RMS)","latest":0.02,"thresholds":{"warn_above":0.18,"crit_above":0.3},"series":[["07:44",0.04],["07:46",0.06],["07:48",0.05],["07:50",0.07],["07:52",0.04],["07:54",0.02],["07:56",0.01],["07:58",0.04],["08:00",0.04],["08:02",0.05],["08:04",0.04],["08:06",0.04],["08:08",0.04],["08:10",0.02],["08:12",0.03],["08:14",0.04],["08:16",0.06],["08:18",0.07],["08:20",0.06],["08:22",0.04],["08:24",0.03],["08:26",0.04],["08:28",0.03],["08:30",0.04],["08:32",0.05],["08:34",0.05],["08:36",0.04],["08:38",0.03],["08:40",0.02],["08:42",0.02],["08:44",0.05],["08:46",0.06],["08:48",0.07],["08:50",0.07],["08:52",0.03],["08:54",0.03],["08:56",0.02],["08:58",0.03],["09:00",0.04],["09:02",0.05],["09:04",0.06],["09:06",0.05],["09:08",0.03],["09:10",0.01],["09:12",0.01],["09:14",0.04],["09:16",0.06],["09:18",0.05],["09:20",0.07],["09:22",0.04],["09:24",0.02],["09:26",0.03],["09:28",0.03],["09:30",0.05],["09:32",0.05],["09:34",0.05],["09:36",0.05],["09:38",0.02],["09:40",0.02],["09:42",0.02]]},{"slug":"air-quality","label":"Air Quality","slot":"B3","group":"B","chip":"MH-Z19 (CO2 NDIR)","author":"community/greenhouse-oss","official":false,"status":"good","connectedAt":"2026-08-10T09:42:00Z","series_idx":7,"metricKey":"co2_ppm","unit":"ppm","latest":701.46,"thresholds":{"warn_above":1000,"crit_above":1500},"series":[["07:44",621.99],["07:46",647.43],["07:48",643.29],["07:50",690.14],["07:52",705.53],["07:54",679.88],["07:56",737.19],["07:58",697.62],["08:00",707.68],["08:02",707.42],["08:04",711.36],["08:06",640.33],["08:08",612.28],["08:10",590.16],["08:12",614.25],["08:14",594.35],["08:16",523.99],["08:18",537.37],["08:20",518.78],["08:22",554.87],["08:24",523.34],["08:26",540.07],["08:28",549.44],["08:30",561.52],["08:32",597.49],["08:34",608.87],["08:36",625.71],["08:38",655.63],["08:40",689.3],["08:42",682.74],["08:44",713.42],["08:46",740.44],["08:48",695.96],["08:50",691.57],["08:52",664.12],["08:54",682.56],["08:56",621.23],["08:58",629.04],["09:00",637.16],["09:02",579.53],["09:04",559.13],["09:06",538.29],["09:08",525.68],["09:10",510.16],["09:12",567.12],["09:14",558.97],["09:16",545.48],["09:18",573.84],["09:20",580.18],["09:22",588.09],["09:24",669.57],["09:26",657.2],["09:28",639.79],["09:30",661.79],["09:32",659.93],["09:34",715.97],["09:36",684.35],["09:38",695.29],["09:40",687.87],["09:42",701.46]]},{"slug":"soil-moisture","label":"Soil Moisture","slot":"C1","group":"C","chip":"Capacitive v1.2","author":"community/greenhouse-oss","official":false,"status":"warning","connectedAt":"2026-07-25T09:42:00Z","series_idx":8,"metricKey":"soil_pct","unit":"%","latest":15.4,"thresholds":{"warn_below":18,"crit_below":8},"series":[["07:44",37.91],["07:46",38.7],["07:48",39.67],["07:50",37.87],["07:52",42.42],["07:54",42.84],["07:56",44.15],["07:58",46.35],["08:00",42.91],["08:02",43.65],["08:04",43.92],["08:06",46.91],["08:08",41.37],["08:10",44.55],["08:12",41.36],["08:14",39.32],["08:16",39.7],["08:18",40.1],["08:20",43.13],["08:22",39.51],["08:24",39.71],["08:26",37.5],["08:28",39.33],["08:30",35.93],["08:32",38.73],["08:34",34.46],["08:36",34.04],["08:38",34.66],["08:40",33.87],["08:42",35.41],["08:44",32.98],["08:46",30.63],["08:48",31.34],["08:50",31.17],["08:52",33.09],["08:54",32.67],["08:56",32.11],["08:58",33.91],["09:00",32.23],["09:02",33.34],["09:04",34.41],["09:06",37.11],["09:08",35.41],["09:10",35.82],["09:12",36.01],["09:14",35.88],["09:16",33.88],["09:18",32.76],["09:20",34.15],["09:22",32.58],["09:24",31.22],["09:26",29.89],["09:28",27.79],["09:30",25.64],["09:32",25.38],["09:34",23.04],["09:36",21.74],["09:38",19.4],["09:40",17.4],["09:42",15.4]]},{"slug":"access-control","label":"Access Control","slot":"A4","group":"A","chip":"MFRC522 RFID","author":"nodeframe-core","official":true,"status":"warning","connectedAt":"2026-07-01T09:42:00Z","series_idx":4,"scans":[{"t":"09:22","uid":"04:79:A3:16:5C","name":"unknown badge","ok":false},{"t":"09:21","uid":"04:40:A3:26:5C","name":"M. Fischer","ok":true},{"t":"09:00","uid":"04:41:A3:35:5C","name":"J. Kim","ok":true},{"t":"08:50","uid":"04:51:A3:37:5C","name":"M. Fischer","ok":true},{"t":"07:51","uid":"04:49:A3:83:5C","name":"A. Rao","ok":true},{"t":"07:44","uid":"04:30:A3:49:5C","name":"unknown badge","ok":false}]}],"events":[{"t":"09:35","type":"relay","sev":"critical","module":"Core Hub","msg":"Machinery power cut via relay R1 in response to Gas Level critical."},{"t":"09:34","type":"threshold","sev":"critical","module":"Gas Level","msg":"Gas Level exceeded 650 ppm (reading: 720 ppm) \u2014 safety relay tripped."},{"t":"09:24","type":"threshold","sev":"warning","module":"Soil Moisture","msg":"Soil Moisture trending toward the warning band \u2014 irrigation suggested within ~2 hours."},{"t":"09:01","type":"access","sev":"warning","module":"Access Control","msg":"Unrecognized badge presented at Core Hub \u2014 access denied."},{"t":"08:32","type":"plugin","sev":"info","module":"Soil Moisture","msg":"Plugin 'soil-moisture' v1.0 installed from community/greenhouse-oss and auto-mapped to slot C1."},{"t":"07:37","type":"connect","sev":"info","module":"Vibration","msg":"Module hot-plugged into slot B2 \u2014 manifest read, driver loaded, no reboot required."},{"t":"03:50","type":"firmware","sev":"info","module":"Core Hub","msg":"Core firmware updated to v2.4.1 (plugin ABI unchanged, all modules stayed online)."},{"t":"00:27","type":"disconnect","sev":"warning","module":"Ambient Light","msg":"Module unresponsive for 30s and marked offline \u2014 reconnected 40s later."}],"marketplace":[{"slug":"ambient-climate","name":"Ambient Climate","chip":"DHT11","category":"Environmental","author":"nodeframe-core","version":"core","installs":null,"official":true,"installed":true,"desc":"Installed in slot A1."},{"slug":"gas-level","name":"Gas Level","chip":"MQ-6 (LPG/Propane)","category":"Environmental","author":"nodeframe-core","version":"core","installs":null,"official":true,"installed":true,"desc":"Installed in slot A2."},{"slug":"proximity","name":"Proximity","chip":"HC-SR04","category":"Environmental","author":"nodeframe-core","version":"core","installs":null,"official":true,"installed":true,"desc":"Installed in slot A3."},{"slug":"ambient-light","name":"Ambient Light","chip":"BH1750","category":"Environmental","author":"community/pixel-farm","version":"1.0.0","installs":null,"official":false,"installed":true,"desc":"Installed in slot B1."},{"slug":"vibration","name":"Vibration","chip":"ADXL345","category":"Environmental","author":"community/wrench-labs","version":"1.0.0","installs":null,"official":false,"installed":true,"desc":"Installed in slot B2."},{"slug":"air-quality","name":"Air Quality","chip":"MH-Z19 (CO2 NDIR)","category":"Environmental","author":"community/greenhouse-oss","version":"1.0.0","installs":null,"official":false,"installed":true,"desc":"Installed in slot B3."},{"slug":"soil-moisture","name":"Soil Moisture","chip":"Capacitive v1.2","category":"Environmental","author":"community/greenhouse-oss","version":"1.0.0","installs":null,"official":false,"installed":true,"desc":"Installed in slot C1."},{"slug":"sound-level","name":"Sound Level","chip":"KY-038","category":"Audio","author":"community/quiet-office","version":"1.3.0","installs":812,"official":false,"installed":false,"desc":"Ambient dB monitoring with configurable noise-complaint thresholds."},{"slug":"uv-index","name":"UV Index","chip":"GUVA-S12SD","category":"Environmental","author":"community/greenhouse-oss","version":"0.9.2","installs":341,"official":false,"installed":false,"desc":"Outdoor UV exposure tracking, tuned for greenhouse and grow-tent rigs."},{"slug":"water-leak","name":"Water Leak","chip":"Generic probe pair","category":"Safety","author":"community/wrench-labs","version":"1.0.4","installs":1204,"official":false,"installed":false,"desc":"Binary leak detection with an instant critical event on contact."},{"slug":"current-draw","name":"Current Draw","chip":"ACS712-20A","category":"Power","author":"nodeframe-core","version":"2.1.0","installs":2790,"official":true,"installed":false,"desc":"Clamp-style current sensing for machinery load and overcurrent cutoffs."},{"slug":"flame-detect","name":"Flame Detect","chip":"IR flame sensor","category":"Safety","author":"community/firebreak","version":"1.1.1","installs":566,"official":false,"installed":false,"desc":"IR flicker detection for early fire signal, pairs well with Gas Level."}]}</script>
+
+<script>
+(function(){
+  "use strict";
+  var DATA = JSON.parse(document.getElementById('seed-data').textContent);
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var SERIES_VAR = { 1:'--series-1', 2:'--series-2', 3:'--series-3', 4:'--series-4', 5:'--series-5', 6:'--series-6', 7:'--series-7', 8:'--series-8' };
+  var STATUS_VAR = { good:'--good', warning:'--warning', critical:'--critical' };
+
+  function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function byId(id){ return document.getElementById(id); }
+  function el(tag, cls){ var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+  function fmtNum(v, d){
+    if (v === null || v === undefined) return '—';
+    var n = Number(v);
+    return n.toFixed(d === undefined ? (Math.abs(n) < 10 ? 2 : 1) : d).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  }
+  function fmtDate(iso){
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function moduleBySlug(slug){
+    for (var i = 0; i < DATA.modules.length; i++) if (DATA.modules[i].slug === slug) return DATA.modules[i];
+    return null;
+  }
+
+  /* ============ header / hero stats ============ */
+  byId('fw-version').textContent = DATA.core.firmware;
+  byId('spec-fw').textContent = DATA.core.firmware;
+  byId('stat-slots').innerHTML = DATA.core.slots_used + ' / ' + DATA.core.slots_total + ' <span>slots</span>';
+  byId('stat-uptime').innerHTML = DATA.core.uptime_hours + '<span>h</span>';
+  byId('spec-uptime').textContent = DATA.core.uptime_hours + ' hours continuous';
+  byId('spec-slots').textContent = DATA.core.slots_used + ' / ' + DATA.core.slots_total;
+  byId('schematic-count').textContent = DATA.core.slots_used + ' / ' + DATA.core.slots_total + ' active';
+
+  var officialCount = DATA.modules.filter(function(m){ return m.official; }).length;
+  byId('spec-official').textContent = officialCount;
+  byId('spec-community').textContent = DATA.modules.length - officialCount;
+  byId('modules-sub').textContent = 'Snapshot at ' + DATA.generatedAt + ' · all ' + DATA.core.slots_used + ' slots reporting.';
+
+  var mkInstalled = DATA.marketplace.filter(function(m){ return m.installed; }).length;
+  var mkOfficial = DATA.marketplace.filter(function(m){ return m.official; }).length;
+  byId('market-heading').textContent = mkInstalled + ' plugins already seated, ' + (DATA.marketplace.length - mkInstalled) + ' waiting for a slot.';
+
+  /* ============ hero bus schematic ============ */
+  (function(){
+    var LAYOUT = {
+      A1: { side: 'L', row: 0 }, A2: { side: 'R', row: 1 }, A3: { side: 'L', row: 2 }, A4: { side: 'R', row: 3 },
+      B1: { side: 'L', row: 4 }, B2: { side: 'R', row: 5 }, B3: { side: 'L', row: 6 }, C1: { side: 'R', row: 7 }
+    };
+    var rowY = function(r){ return 100 + r * 60; };
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = byId('bus-svg');
+
+    var sorted = DATA.modules.slice().sort(function(a, b){ return new Date(a.connectedAt) - new Date(b.connectedAt); });
+    var delayIndex = {};
+    sorted.forEach(function(m, i){ delayIndex[m.slug] = i; });
+
+    function mk(tag, attrs){
+      var n = document.createElementNS(svgNS, tag);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      return n;
+    }
+
+    // hub
+    svg.appendChild(mk('rect', { x: 190, y: 8, width: 180, height: 48, rx: 7, class: 'hub-box' }));
+    var hubT1 = mk('text', { x: 280, y: 28, 'text-anchor': 'middle', class: 'hub-label' }); hubT1.textContent = 'CORE HUB'; svg.appendChild(hubT1);
+    var hubT2 = mk('text', { x: 280, y: 44, 'text-anchor': 'middle', class: 'hub-sub' }); hubT2.textContent = 'ESP32-S3 · ' + DATA.core.firmware; svg.appendChild(hubT2);
+
+    // trunk
+    svg.appendChild(mk('line', { x1: 280, y1: 56, x2: 280, y2: rowY(7), class: 'bus-trunk' }));
+
+    Object.keys(LAYOUT).forEach(function(slot){
+      var mod = null;
+      for (var i = 0; i < DATA.modules.length; i++) if (DATA.modules[i].slot === slot) { mod = DATA.modules[i]; break; }
+      if (!mod) return;
+      var pos = LAYOUT[slot];
+      var y = rowY(pos.row);
+      var left = pos.side === 'L';
+      var rectX = left ? 10 : 400;
+      var stubX1 = left ? 160 : 280;
+      var stubX2 = left ? 280 : 400;
+
+      svg.appendChild(mk('circle', { cx: 280, cy: y, r: 3, class: 'bus-tap' }));
+      var stub = mk('line', { x1: stubX1, y1: y, x2: stubX2, y2: y, class: 'bus-stub' });
+      stub.style.setProperty('--d', delayIndex[mod.slug]);
+      svg.appendChild(stub);
+
+      var g = mk('g', { class: 'slot-node', tabindex: '0', role: 'button', 'aria-label': mod.label + ', slot ' + slot + ', status ' + mod.status, 'data-slug': mod.slug });
+      g.style.setProperty('--d', delayIndex[mod.slug]);
+      g.appendChild(mk('rect', { x: rectX, y: y - 22, width: 150, height: 44, rx: 6, class: 'node-box' }));
+
+      var seriesColor = 'var(' + SERIES_VAR[mod.series_idx] + ')';
+      var statusColor = 'var(' + STATUS_VAR[mod.status] + ')';
+
+      g.appendChild(mk('circle', { cx: rectX + 14, cy: y - 8, r: 4, fill: seriesColor }));
+      var idT = mk('text', { x: rectX + 25, y: y - 4, class: 'slot-id' }); idT.textContent = slot; g.appendChild(idT);
+      g.appendChild(mk('circle', { cx: rectX + 136, cy: y - 8, r: 4, fill: statusColor }));
+      var labT = mk('text', { x: rectX + 14, y: y + 14, class: 'slot-label' }); labT.textContent = mod.label; g.appendChild(labT);
+
+      svg.appendChild(g);
+    });
+
+    /* inspector */
+    var inspector = byId('inspector');
+    function renderInspector(mod){
+      var seriesColor = 'var(' + SERIES_VAR[mod.series_idx] + ')';
+      var statusColor = 'var(' + STATUS_VAR[mod.status] + ')';
+      var readingLine;
+      if (mod.metricKey) {
+        readingLine = fmtNum(mod.latest) + ' ' + mod.unit;
+      } else if (mod.scans && mod.scans.length) {
+        var last = mod.scans[0];
+        readingLine = last.name + (last.ok ? ' — authorized' : ' — denied') + ' @ ' + last.t;
+      } else {
+        readingLine = '—';
+      }
+      inspector.innerHTML =
+        '<dl class="inspector-grid">' +
+        '<div class="inspector-field"><dt>Slot</dt><dd>' + mod.slot + '</dd></div>' +
+        '<div class="inspector-field"><dt>Status</dt><dd style="color:' + statusColor + '">' + mod.status + '</dd></div>' +
+        '<div class="inspector-field"><dt>Module</dt><dd style="color:' + seriesColor + '">' + mod.label + '</dd></div>' +
+        '<div class="inspector-field"><dt>Chip</dt><dd>' + mod.chip + '</dd></div>' +
+        '<div class="inspector-field"><dt>Reading</dt><dd>' + readingLine + '</dd></div>' +
+        '<div class="inspector-field"><dt>Author</dt><dd>' + mod.author + '</dd></div>' +
+        '</dl>';
+    }
+
+    svg.querySelectorAll('.slot-node').forEach(function(node){
+      var mod = moduleBySlug(node.getAttribute('data-slug'));
+      var show = function(){ renderInspector(mod); };
+      node.addEventListener('mouseenter', show);
+      node.addEventListener('focus', show);
+      node.addEventListener('click', show);
+    });
+  })();
+
+  /* ============ sparkline engine ============ */
+  var tip = el('div', 'spark-tip'); document.body.appendChild(tip);
+
+  function buildSpark(container, points, colorVarName, thresholds, unitLabel){
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var w = 220, h = 48, padX = 3, padY = 7;
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    var vals = points.map(function(p){ return p[1]; });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    var refLines = [];
+    if (thresholds) {
+      Object.keys(thresholds).forEach(function(k){
+        var v = thresholds[k];
+        if (typeof v === 'number') { min = Math.min(min, v); max = Math.max(max, v); refLines.push({ v: v, crit: k.indexOf('crit') === 0 }); }
+      });
+    }
+    if (min === max) { min -= 1; max += 1; }
+    var pad = (max - min) * 0.12; min -= pad; max += pad;
+
+    function xAt(i){ return padX + (i / (points.length - 1)) * (w - 2 * padX); }
+    function yAt(v){ return (h - padY) - ((v - min) / (max - min)) * (h - 2 * padY); }
+
+    var color = 'var(' + colorVarName + ')';
+
+    refLines.forEach(function(r){
+      var ly = yAt(r.v);
+      var line = document.createElementNS(svgNS, 'line');
+      line.setAttribute('x1', padX); line.setAttribute('x2', w - padX);
+      line.setAttribute('y1', ly); line.setAttribute('y2', ly);
+      line.setAttribute('stroke', r.crit ? 'var(--critical)' : 'var(--warning)');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '2 3');
+      line.setAttribute('opacity', '0.55');
+      svg.appendChild(line);
+    });
+
+    var areaD = 'M ' + xAt(0) + ' ' + h + ' ';
+    var lineD = 'M ' + xAt(0) + ' ' + yAt(points[0][1]) + ' ';
+    for (var i = 0; i < points.length; i++) {
+      areaD += 'L ' + xAt(i) + ' ' + yAt(points[i][1]) + ' ';
+      if (i > 0) lineD += 'L ' + xAt(i) + ' ' + yAt(points[i][1]) + ' ';
+    }
+    areaD += 'L ' + xAt(points.length - 1) + ' ' + h + ' Z';
+
+    var area = document.createElementNS(svgNS, 'path');
+    area.setAttribute('d', areaD); area.setAttribute('fill', color); area.setAttribute('opacity', '0.1'); area.setAttribute('stroke', 'none');
+    svg.appendChild(area);
+
+    var line = document.createElementNS(svgNS, 'path');
+    line.setAttribute('d', lineD); line.setAttribute('fill', 'none'); line.setAttribute('stroke', color); line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linejoin', 'round'); line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+
+    var lastI = points.length - 1;
+    var ring = document.createElementNS(svgNS, 'circle');
+    ring.setAttribute('cx', xAt(lastI)); ring.setAttribute('cy', yAt(points[lastI][1])); ring.setAttribute('r', 4.5);
+    ring.setAttribute('fill', color); ring.setAttribute('stroke', 'var(--surface)'); ring.setAttribute('stroke-width', '2');
+    svg.appendChild(ring);
+
+    var hit = document.createElementNS(svgNS, 'rect');
+    hit.setAttribute('x', 0); hit.setAttribute('y', 0); hit.setAttribute('width', w); hit.setAttribute('height', h);
+    hit.setAttribute('fill', 'transparent');
+    svg.appendChild(hit);
+
+    function nearestIndex(clientX){
+      var rect = svg.getBoundingClientRect();
+      var relX = (clientX - rect.left) / rect.width * w;
+      var frac = (relX - padX) / (w - 2 * padX);
+      var idx = Math.round(frac * (points.length - 1));
+      return Math.max(0, Math.min(points.length - 1, idx));
+    }
+    svg.addEventListener('mousemove', function(e){
+      var idx = nearestIndex(e.clientX);
+      var p = points[idx];
+      tip.innerHTML = '<span class="t">' + p[0] + '</span>' + fmtNum(p[1]) + (unitLabel ? ' ' + unitLabel : '');
+      tip.style.left = e.clientX + 'px';
+      tip.style.top = e.clientY + 'px';
+      tip.classList.add('show');
+    });
+    svg.addEventListener('mouseleave', function(){ tip.classList.remove('show'); });
+
+    container.appendChild(svg);
+  }
+
+  /* ============ module cards ============ */
+  (function(){
+    var grid = byId('module-grid');
+    var order = DATA.modules.slice().sort(function(a, b){ return a.slot < b.slot ? -1 : 1; });
+
+    order.forEach(function(mod){
+      var card = el('div', 'mcard reveal');
+      if (!reduceMotion) card.setAttribute('data-armed', '');
+
+      var top = el('div', 'mcard-top');
+      var idWrap = el('div', 'mcard-id');
+      var dot = el('span', 'series-dot'); dot.style.background = 'var(' + SERIES_VAR[mod.series_idx] + ')';
+      var slotTxt = el('span', 'mcard-slot mono'); slotTxt.textContent = 'SLOT ' + mod.slot;
+      idWrap.appendChild(dot); idWrap.appendChild(slotTxt);
+      var pill = el('span', 'status-pill ' + mod.status); pill.textContent = mod.status;
+      top.appendChild(idWrap); top.appendChild(pill);
+      card.appendChild(top);
+
+      var label = el('div', 'mcard-label'); label.textContent = mod.label; card.appendChild(label);
+      var chip = el('div', 'mcard-chip'); chip.textContent = mod.chip + ' · ' + (mod.official ? 'nodeframe-core' : mod.author); card.appendChild(chip);
+
+      if (mod.metricKey2) {
+        // dual-metric module: two small single-axis sparklines, never one dual-axis chart
+        var row = el('div', 'spark-row');
+        var col1 = el('div', 'spark-col');
+        col1.appendChild(Object.assign(el('div', 'mini-label'), { textContent: mod.metricKey.toUpperCase() }));
+        var readingWrap = el('div', 'mcard-reading');
+        readingWrap.innerHTML = '<span class="val tab-nums">' + fmtNum(mod.latest) + '</span><span class="unit">' + mod.unit + '</span>';
+        col1.appendChild(readingWrap);
+        var s1 = el('div', 'spark-wrap'); col1.appendChild(s1);
+        buildSpark(s1, mod.series.map(function(p){ return [p[0], p[1]]; }), SERIES_VAR[mod.series_idx], mod.thresholds, mod.unit);
+
+        var col2 = el('div', 'spark-col');
+        col2.appendChild(Object.assign(el('div', 'mini-label'), { textContent: mod.metricKey2.toUpperCase() }));
+        var lastV2 = mod.series[mod.series.length - 1][2];
+        var readingWrap2 = el('div', 'mcard-reading');
+        readingWrap2.innerHTML = '<span class="val tab-nums">' + fmtNum(lastV2) + '</span><span class="unit">' + mod.unit2 + '</span>';
+        col2.appendChild(readingWrap2);
+        var s2 = el('div', 'spark-wrap'); col2.appendChild(s2);
+        buildSpark(s2, mod.series.map(function(p){ return [p[0], p[2]]; }), SERIES_VAR[mod.series_idx], null, mod.unit2);
+
+        row.appendChild(col1); row.appendChild(col2);
+        card.appendChild(row);
+      } else if (mod.metricKey) {
+        var reading = el('div', 'mcard-reading');
+        reading.innerHTML = '<span class="val tab-nums">' + fmtNum(mod.latest) + '</span><span class="unit">' + mod.unit + '</span>';
+        card.appendChild(reading);
+        var sw = el('div', 'spark-wrap'); card.appendChild(sw);
+        buildSpark(sw, mod.series, SERIES_VAR[mod.series_idx], mod.thresholds, mod.unit);
+        if (mod.slug === 'gas-level') {
+          var note = el('div', 'mcard-note');
+          note.innerHTML = 'Critical spike to 720 ppm ~8 min ago — relay tripped, since decayed back to normal.';
+          card.appendChild(note);
+        }
+        if (mod.slug === 'soil-moisture') {
+          var note2 = el('div', 'mcard-note warn');
+          note2.innerHTML = 'Trending down toward the 18% dry threshold — irrigation suggested within ~2h.';
+          card.appendChild(note2);
+        }
+      } else if (mod.scans) {
+        var list = el('div', 'scan-list');
+        mod.scans.slice(0, 4).forEach(function(s){
+          var row2 = el('div', 'scan-row');
+          var who = el('span', 'who' + (s.ok ? '' : ' denied')); who.textContent = s.name + (s.ok ? '' : ' · denied');
+          var t = el('span', 't mono'); t.textContent = s.t;
+          row2.appendChild(who); row2.appendChild(t);
+          list.appendChild(row2);
+        });
+        card.appendChild(list);
+        var note3 = el('div', 'mcard-note warn');
+        note3.textContent = 'Unrecognized badge presented — access denied.';
+        card.appendChild(note3);
+      }
+
+      grid.appendChild(card);
+    });
+  })();
+
+  /* ============ event log ============ */
+  (function(){
+    var list = byId('event-list');
+    DATA.events.forEach(function(e){
+      var row = el('div', 'event-row');
+      var t = el('span', 't mono'); t.textContent = e.t;
+      var sev = el('span', 'event-sev ' + e.sev);
+      var mod = el('span', 'module'); mod.textContent = e.module;
+      var msg = el('span', 'msg'); msg.textContent = e.msg;
+      row.appendChild(t); row.appendChild(sev); row.appendChild(mod); row.appendChild(msg);
+      list.appendChild(row);
+    });
+  })();
+
+  /* ============ marketplace ============ */
+  (function(){
+    var grid = byId('market-grid');
+    DATA.marketplace.forEach(function(p){
+      var card = el('div', 'pcard reveal' + (p.installed ? ' is-installed' : ''));
+      if (!reduceMotion) card.setAttribute('data-armed', '');
+
+      var top = el('div', 'pcard-top');
+      var name = el('div', 'pcard-name'); name.textContent = p.name;
+      var badge = el('span', 'origin-badge ' + (p.official ? 'official' : 'community')); badge.textContent = p.official ? 'Official' : 'Community';
+      top.appendChild(name); top.appendChild(badge);
+      card.appendChild(top);
+
+      var chip = el('div', 'pcard-chip mono'); chip.textContent = p.chip + ' · ' + p.category; card.appendChild(chip);
+      var desc = el('div', 'pcard-desc'); desc.textContent = p.desc; card.appendChild(desc);
+
+      var foot = el('div', 'pcard-foot');
+      var author = el('span', 'pcard-author'); author.textContent = p.author;
+      var state = el('span', 'pcard-state ' + (p.installed ? 'installed' : ''));
+      if (p.installed) {
+        state.textContent = 'INSTALLED';
+      } else {
+        state.innerHTML = '<a href="javascript:void(0)">INSTALL</a>' + (p.installs ? ' · ' + p.installs.toLocaleString() : '');
+      }
+      foot.appendChild(author); foot.appendChild(state);
+      card.appendChild(foot);
+
+      grid.appendChild(card);
+    });
+  })();
+
+  /* ============ scroll reveal ============ */
+  if (!reduceMotion && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal-in');
+          entry.target.removeAttribute('data-armed');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal[data-armed]').forEach(function(node){ io.observe(node); });
+  }
+})();
+</script>
