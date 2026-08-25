@@ -1,8 +1,49 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Insight, InsightsResult } from "@/lib/ai/types";
+import type { ModuleRuntime } from "./utils";
 import { severityIcon } from "./icons";
+
+// ── Rolling-average anomaly detector ────────────────────────────────────────
+// For each module: compute the mean of the last 10 series values, then check
+// if the latest reading spikes above 1.5× that mean. This is the "fake ML"
+// threshold the brief calls for — deterministic, no model, zero latency.
+const SPIKE_RATIO = 1.5;
+const ROLLING_WINDOW = 10;
+
+interface AnomalyHit {
+  label: string;
+  latest: number;
+  rollingAvg: number;
+  unit: string;
+  ratio: number;
+}
+
+function detectAnomalies(modules: ModuleRuntime[]): AnomalyHit[] {
+  const hits: AnomalyHit[] = [];
+  for (const m of modules) {
+    if (!m.series || m.series.length < 2) continue;
+    const window = m.series.slice(-ROLLING_WINDOW);
+    const avg = window.reduce((sum, p) => sum + p.v, 0) / window.length;
+    if (avg <= 0) continue; // guard against divide-by-zero / nonsense baseline
+    const latest = m.latest ?? m.series[m.series.length - 1].v;
+    const ratio = latest / avg;
+    if (ratio >= SPIKE_RATIO) {
+      hits.push({
+        label: m.def.label,
+        latest,
+        rollingAvg: Math.round(avg * 10) / 10,
+        unit: m.def.unit,
+        ratio: Math.round(ratio * 100) / 100,
+      });
+    }
+  }
+  // Sort worst spike first.
+  return hits.sort((a, b) => b.ratio - a.ratio);
+}
+
+// ── Sub-components ───────────────────────────────────────────────────────────
 
 const SEVERITY_CLASSES: Record<Insight["severity"], string> = {
   info: "border-teal/30 bg-teal/6",
@@ -31,6 +72,44 @@ function InsightCard({ insight }: { insight: Insight }) {
   );
 }
 
+function AnomalyBanner({ hits }: { hits: AnomalyHit[] }) {
+  if (hits.length === 0) return null;
+  return (
+    <div className="mb-4 flex flex-col gap-2">
+      {hits.map((hit) => (
+        <div
+          key={hit.label}
+          className="flex items-start gap-3 rounded-[9px] border border-critical/50 bg-critical/10 px-4 py-3"
+          role="alert"
+          aria-live="polite"
+        >
+          <span className="mt-0.5 text-[16px] leading-none" aria-hidden="true">✨</span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="text-[13px] font-bold text-critical">AI Anomaly Detected</span>
+              <span className="font-mono text-[10px] tracking-[0.05em] text-ink-muted uppercase">{hit.label}</span>
+            </div>
+            <p className="text-[12px] leading-[1.5] text-ink-secondary">
+              Current reading of{" "}
+              <span className="font-semibold text-ink">
+                {hit.latest}
+                {hit.unit}
+              </span>{" "}
+              is <span className="font-semibold text-critical">{hit.ratio}×</span> above the{" "}
+              {ROLLING_WINDOW}-sample rolling average of{" "}
+              <span className="font-semibold text-ink">
+                {hit.rollingAvg}
+                {hit.unit}
+              </span>
+              . Threshold: ≥{SPIKE_RATIO}× baseline.
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SkeletonRow() {
   return (
     <div className="flex gap-3 rounded-[9px] border border-border bg-surface-2 px-4 py-3.5">
@@ -43,7 +122,9 @@ function SkeletonRow() {
   );
 }
 
-export function AIInsights() {
+// ── Main component ───────────────────────────────────────────────────────────
+
+export function AIInsights({ modules }: { modules: ModuleRuntime[] }) {
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -64,14 +145,14 @@ export function AIInsights() {
   }, []);
 
   useEffect(() => {
-    // One-time fetch on mount (and on manual refresh via the button below,
-    // which calls `load` directly rather than through this effect). The
-    // setState calls inside `load` are async-callback-driven, not a
-    // synchronous effect body — matching the pattern already used for the
-    // dashboard's own load-time effect in DashboardApp.tsx.
+    // One-time fetch on mount. Manual refresh is via the button below.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
+
+  // Recompute anomalies whenever the module series update — this is cheap
+  // (pure arithmetic on an array ≤ 90 elements) so no debouncing needed.
+  const anomalies = useMemo(() => detectAnomalies(modules), [modules]);
 
   const sourceLabel =
     result?.source === "ollama"
@@ -88,6 +169,11 @@ export function AIInsights() {
           className="flex items-center gap-2.5 font-display text-[13px] font-extrabold tracking-[0.08em] text-ink uppercase"
         >
           AI Insights
+          {anomalies.length > 0 && (
+            <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-critical/50 bg-critical/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-critical uppercase tracking-[0.04em]">
+              ✨ {anomalies.length} anomal{anomalies.length === 1 ? "y" : "ies"}
+            </span>
+          )}
         </h2>
         <div className="flex items-center gap-3 font-mono text-[12px] text-ink-muted">
           {sourceLabel && <span>{sourceLabel}</span>}
@@ -107,6 +193,8 @@ export function AIInsights() {
           Generated on-device from live sensor readings by a locally hosted model — nothing leaves the rig. Falls back to a
           rule-based reading automatically if the local model isn&apos;t running.
         </p>
+
+        <AnomalyBanner hits={anomalies} />
 
         {loading && !result && (
           <div className="flex flex-col gap-2.5">

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import type { MarketplacePlugin, SeedData } from "@/lib/data";
 import { computeStats, fmtNumber, modulesInSlotOrder, seriesColorFor, uptimeLabel } from "@/lib/data";
+import { useLiveData } from "@/lib/hooks/useLiveData";
 import { ActivityLog } from "./ActivityLog";
 import { AIInsights } from "./AIInsights";
 import { AlertIcon, ClockIcon, ModulesIcon, PulseIcon } from "./icons";
@@ -12,10 +12,16 @@ import { ModuleCard } from "./ModuleCard";
 import { StatTile } from "./StatTile";
 import { TopBar } from "./TopBar";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
-import { buildMergedLog, overallStatus, tickModules } from "./utils";
+import { buildMergedLog, overallStatus } from "./utils";
+import { supabaseClient } from "@/lib/supabase";
 import type { LogItem, ModuleRuntime } from "./utils";
 
-const DATA_TICK_MS = 3600;
+// ── Virtual clock tick ──────────────────────────────────────────────────────
+// The virtual clock still uses Date.now() + elapsed for the header timestamp.
+// We keep the 1s clock tick via useEffect on the clock state, but module data
+// now comes entirely from SWR — no local simulation tick needed.
+import { useEffect, useRef } from "react";
+
 const CLOCK_TICK_MS = 1000;
 
 function initModules(data: SeedData): ModuleRuntime[] {
@@ -32,63 +38,95 @@ function pad2(n: number): string {
 }
 
 export function DashboardApp({ initialData }: { initialData: SeedData }) {
-  const router = useRouter();
   const reduceMotion = usePrefersReducedMotion();
 
-  const [modules, setModules] = useState<ModuleRuntime[]>(() => initModules(initialData));
-  const [logItems, setLogItems] = useState<LogItem[]>(() => buildMergedLog(initialData.events, initialData.modules));
-  const [marketOverrides, setMarketOverrides] = useState<Set<string>>(() => new Set());
+  // ── SWR live data ──────────────────────────────────────────────────────────
+  // SWR seeds from initialData (server snapshot) and revalidates every 30 s.
+  // keepPreviousData means the UI never shows a blank/loading state between
+  // polls — zero jitter.
+  const { data: liveData, pollStatus } = useLiveData(initialData);
 
-  useEffect(() => {
-    setModules(initModules(initialData));
-    setLogItems(buildMergedLog(initialData.events, initialData.modules));
-  }, [initialData]);
+  // ── Local-only log additions (plugin installs) ─────────────────────────────
+  const [localLogItems, setLocalLogItems] = useState<LogItem[]>([]);
+  const [localInstalled, setLocalInstalled] = useState<MarketplacePlugin[]>([]);
+  const [localUninstalled, setLocalUninstalled] = useState<Set<string>>(() => new Set());
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      router.refresh();
-    }, 15000);
-    return () => clearInterval(id);
-  }, [router]);
+  const virtualData = useMemo(() => {
+    let newModules = liveData.modules.filter((m) => !localUninstalled.has(m.slug));
+    
+    const existingSlugs = new Set(newModules.map((m) => m.slug));
+    const newlyInstalled = localInstalled
+      .filter((p) => !existingSlugs.has(p.slug))
+      .map((p) => ({
+        id: `local-${p.slug}`,
+        slug: p.slug,
+        label: p.name,
+        slot: p.target_slot || "B2",
+        sensor_chip: p.sensor_chip || "",
+        metric_key: p.metric_key || "",
+        unit: p.unit || "",
+        author: p.author,
+        status: "good" as const,
+        latest: 0,
+        thresholds: p.thresholds || {},
+        series: [],
+        connected_at: new Date().toISOString(),
+      }));
 
-  // `loadedAt`/`nowMs` stay null through the server render and the first
-  // client render, so the virtual clock renders as the seed's fixed
-  // `generated_at` timestamp on both — no hydration mismatch. An effect
-  // then stamps the real load time once mounted, and (unless the user
-  // prefers reduced motion) a 1s interval keeps it advancing from there.
+    newModules = [...newModules, ...newlyInstalled];
+
+    const newMarketplace = liveData.marketplace.map((p) => {
+      if (localUninstalled.has(p.slug)) return { ...p, installed: false };
+      if (localInstalled.some((ip) => ip.slug === p.slug)) return { ...p, installed: true };
+      return p;
+    });
+
+    return {
+      ...liveData,
+      modules: newModules,
+      marketplace: newMarketplace,
+    };
+  }, [liveData, localInstalled, localUninstalled]);
+
+  // Derive modules from the optimistic virtualData
+  const modules: ModuleRuntime[] = useMemo(() => initModules(virtualData), [virtualData]);
+
+  // Combined log: local items at the front, then DB events, deduped, capped.
+  const logItems: LogItem[] = useMemo(() => {
+    const fresh = buildMergedLog(virtualData.events, virtualData.modules);
+    const freshKeys = new Set(fresh.map((i) => `${i.t}|${i.message}`));
+    const localOnly = localLogItems.filter((i) => !freshKeys.has(`${i.t}|${i.message}`));
+    return [...localOnly, ...fresh].slice(0, 200);
+  }, [virtualData, localLogItems]);
+
+  const marketplace = virtualData.marketplace;
+
+  // ── Virtual clock ─────────────────────────────────────────────────────────
+  // loadedAt/nowMs stay null through SSR and the first client render so the
+  // server and hydration renders match (no hydration mismatch).
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState<number | null>(null);
-  const seedNowMs = useMemo(() => new Date(initialData.generated_at).getTime(), [initialData.generated_at]);
+
+  // Use a ref to the seed timestamp so the clock doesn't drift on re-renders.
+  const seedNowMs = useRef(new Date(initialData.generated_at).getTime());
 
   useEffect(() => {
-    // One-time capture of the real load timestamp. This intentionally can't
-    // be a lazy useState initializer or a useSyncExternalStore snapshot:
-    // Date.now() must differ between the server render and this first
-    // client effect for the virtual clock to be meaningful, and capturing
-    // it via an initializer would make the server-rendered HTML and the
-    // first client render disagree, causing a hydration mismatch. Staying
-    // null through both of those renders keeps them identical; this effect
-    // then supplies the real value once mounted.
     const t = Date.now();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadedAt(t);
     setNowMs(t);
   }, []);
 
   useEffect(() => {
     if (reduceMotion) return;
-    const clockId = setInterval(() => setNowMs(Date.now()), CLOCK_TICK_MS);
-    const dataId = setInterval(() => setModules((prev) => tickModules(prev)), DATA_TICK_MS);
-    return () => {
-      clearInterval(clockId);
-      clearInterval(dataId);
-    };
+    const id = setInterval(() => setNowMs(Date.now()), CLOCK_TICK_MS);
+    return () => clearInterval(id);
   }, [reduceMotion]);
 
   const elapsedMs = reduceMotion || loadedAt == null ? 0 : (nowMs ?? loadedAt) - loadedAt;
-  const virtualNow = useMemo(() => new Date(seedNowMs + elapsedMs), [seedNowMs, elapsedMs]);
+  const virtualNow = useMemo(() => new Date(seedNowMs.current + elapsedMs), [elapsedMs]);
 
-  const stats = useMemo(() => computeStats(initialData), [initialData]);
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => computeStats(liveData), [liveData]);
 
   const alertBreakdown = useMemo(() => {
     let warn = 0;
@@ -102,25 +140,23 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
 
   const overall = useMemo(() => overallStatus(modules.map((m) => m.status)), [modules]);
 
-  const elapsedHrs = elapsedMs / 3600000;
-  const uptimeHours = initialData.core.uptime_hours + elapsedHrs;
+  const elapsedHrs = elapsedMs / 3_600_000;
+  const uptimeHours = liveData.core.uptime_hours + elapsedHrs;
   const uptimeDays = Math.floor(uptimeHours / 24);
   const uptimeHrs = Math.floor(uptimeHours % 24);
   const uptimeMins = Math.floor((uptimeHours * 60) % 60);
-  const uptimeValue = loadedAt == null ? uptimeLabel(initialData.core.uptime_hours) : `${uptimeDays}d ${uptimeHrs}h`;
+  const uptimeValue =
+    loadedAt == null ? uptimeLabel(liveData.core.uptime_hours) : `${uptimeDays}d ${uptimeHrs}h`;
 
-  const marketplace: MarketplacePlugin[] = useMemo(
-    () => initialData.marketplace.map((p) => (marketOverrides.has(p.slug) ? { ...p, installed: true } : p)),
-    [initialData.marketplace, marketOverrides],
-  );
-
+  // ── Plugin install/uninstall handler ───────────────────────────────────────
   function handleInstall(plugin: MarketplacePlugin) {
-    setMarketOverrides((prev) => {
+    setLocalUninstalled((prev) => {
       const next = new Set(prev);
-      next.add(plugin.slug);
+      next.delete(plugin.slug);
       return next;
     });
-    setLogItems((prev) => [
+    setLocalInstalled((prev) => [...prev, plugin]);
+    setLocalLogItems((prev) => [
       {
         t: virtualNow.toISOString(),
         severity: "info",
@@ -130,18 +166,55 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
       },
       ...prev,
     ]);
+
+    // Push to database
+    if (supabaseClient) {
+      supabaseClient.from("modules").insert({
+        id: `mod-${plugin.slug}-${Date.now()}`,
+        plugin_slug: plugin.slug,
+        label: plugin.name,
+        slot: plugin.target_slot || "B2",
+        status: "good",
+        connected_at: new Date().toISOString(),
+      }).then();
+    }
+  }
+
+  function handleUninstall(plugin: MarketplacePlugin) {
+    setLocalInstalled((prev) => prev.filter((p) => p.slug !== plugin.slug));
+    setLocalUninstalled((prev) => {
+      const next = new Set(prev);
+      next.add(plugin.slug);
+      return next;
+    });
+    setLocalLogItems((prev) => [
+      {
+        t: virtualNow.toISOString(),
+        severity: "warning",
+        module: plugin.name,
+        type: "plugin",
+        message: `Plugin '${plugin.name}' (${plugin.slug}) was uninstalled and removed from the dashboard.`,
+      },
+      ...prev,
+    ]);
+
+    // Delete from database
+    if (supabaseClient) {
+      supabaseClient.from("modules").delete().eq("plugin_slug", plugin.slug).then();
+    }
   }
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <TopBar
         now={virtualNow}
-        hubName={initialData.core.name}
-        firmware={initialData.core.firmware}
-        slotsUsed={initialData.core.slots_used}
-        slotsTotal={initialData.core.slots_total}
+        hubName={liveData.core.name}
+        firmware={liveData.core.firmware}
+        slotsUsed={liveData.core.slots_used}
+        slotsTotal={liveData.core.slots_total}
         overallStatus={overall}
         reduceMotion={reduceMotion}
+        pollStatus={pollStatus}
       />
 
       <div className="mx-auto w-full max-w-[1440px] flex-1 px-6 pb-16">
@@ -209,15 +282,15 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
           </div>
         </section>
 
-        <AIInsights />
+        <AIInsights modules={modules} />
 
         <ActivityLog items={logItems} now={virtualNow} />
 
-        <MarketplaceGrid plugins={marketplace} onInstall={handleInstall} />
+        <MarketplaceGrid plugins={marketplace} onInstall={handleInstall} onUninstall={handleUninstall} />
 
         <footer className="mt-11 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4.5 font-mono text-[11px] text-ink-muted">
           <span>Nodeframe &middot; MIT licensed</span>
-          <span>snapshot {initialData.generated_at}</span>
+          <span>snapshot {liveData.generated_at}</span>
         </footer>
       </div>
     </div>

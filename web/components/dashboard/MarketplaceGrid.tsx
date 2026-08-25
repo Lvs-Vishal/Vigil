@@ -1,7 +1,7 @@
 import type { MarketplacePlugin } from "@/lib/data";
 import { CheckIcon, PlusIcon } from "./icons";
 
-function MarketCard({ plugin, onInstall }: { plugin: MarketplacePlugin; onInstall: (plugin: MarketplacePlugin) => void }) {
+function MarketCard({ plugin, onInstall, onUninstall }: { plugin: MarketplacePlugin; onInstall: (plugin: MarketplacePlugin) => void; onUninstall: (plugin: MarketplacePlugin) => void }) {
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface px-4 py-3.5">
       <div className="flex items-start justify-between gap-2">
@@ -26,11 +26,10 @@ function MarketCard({ plugin, onInstall }: { plugin: MarketplacePlugin; onInstal
         {plugin.installed ? (
           <button
             type="button"
-            disabled
-            className="inline-flex cursor-default items-center gap-1.5 rounded-md border border-good/35 bg-good/8 px-3 py-[7px] font-mono text-[11px] font-medium tracking-[0.03em] text-good uppercase"
+            onClick={() => onUninstall(plugin)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-critical/35 bg-critical/8 px-3 py-[7px] font-mono text-[11px] font-medium tracking-[0.03em] text-critical uppercase transition-colors hover:border-critical hover:bg-critical/20"
           >
-            <CheckIcon />
-            <span>Installed</span>
+            <span>Uninstall</span>
           </button>
         ) : (
           <button
@@ -47,7 +46,7 @@ function MarketCard({ plugin, onInstall }: { plugin: MarketplacePlugin; onInstal
   );
 }
 
-export function MarketplaceGrid({ plugins, onInstall }: { plugins: MarketplacePlugin[]; onInstall: (plugin: MarketplacePlugin) => void }) {
+export function MarketplaceGrid({ plugins, onInstall, onUninstall }: { plugins: MarketplacePlugin[]; onInstall: (plugin: MarketplacePlugin) => void; onUninstall: (plugin: MarketplacePlugin) => void }) {
   return (
     <section className="mt-9">
       <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-3">
@@ -58,7 +57,7 @@ export function MarketplaceGrid({ plugins, onInstall }: { plugins: MarketplacePl
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
         {plugins.map((p) => (
-          <MarketCard key={p.slug} plugin={p} onInstall={onInstall} />
+          <MarketCard key={p.slug} plugin={p} onInstall={onInstall} onUninstall={onUninstall} />
         ))}
       </div>
     </section>

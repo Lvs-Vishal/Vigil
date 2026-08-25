@@ -10,6 +10,8 @@ import { StepCard } from "@/components/marketing/step-card";
 import { BrowserFrame } from "@/components/marketing/browser-frame";
 import { PreviewModuleCard } from "@/components/marketing/preview-module-card";
 import { MarketplaceCard } from "@/components/marketing/marketplace-card";
+import { HubBuilder } from "@/components/marketing/hub-builder";
+import { PluginGenerator } from "@/components/marketing/plugin-generator";
 
 export const metadata: Metadata = {
   description:
@@ -79,6 +81,8 @@ export default function Home() {
             <ModuleRack />
           </div>
         </section>
+
+        <HubBuilder />
 
         {/* ---------------------------------------------------------- Stats */}
         <section className="border-y border-border bg-surface/40">
@@ -272,34 +276,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* --------------------------------------------------------- CTA */}
-        <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <div className="rounded-xl border border-border-strong bg-surface px-6 py-14 text-center sm:px-14">
-            <h2 className="text-balance font-display text-3xl font-extrabold text-ink sm:text-4xl">
-              Build the plugin your sensor deserves.
-            </h2>
-            <p className="mx-auto mt-4 max-w-[52ch] text-ink-secondary">
-              Write a manifest, wire up a driver, and it runs on any
-              Nodeframe core — yours included.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md border border-border-strong px-5 py-3 font-mono text-sm text-ink transition-colors hover:border-teal hover:text-teal"
-              >
-                Read the docs
-              </a>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 rounded-md border border-copper bg-copper px-5 py-3 font-mono text-sm font-medium text-plane transition-colors hover:border-copper-strong hover:bg-copper-strong"
-              >
-                Open dashboard
-              </Link>
-            </div>
-          </div>
-        </section>
+        {/* ------------------------------------------------- AI Plugin Generator */}
+        <PluginGenerator />
       </main>
 
       {/* ------------------------------------------------------------- Footer */}

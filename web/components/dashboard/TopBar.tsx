@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Status } from "@/lib/data";
+import type { PollStatus } from "@/lib/hooks/useLiveData";
 import { BackArrowIcon, BrandMarkIcon } from "./icons";
 import { StatusPill } from "./StatusPill";
 import { fmtClock, fmtDateLabel } from "./utils";
@@ -12,6 +13,7 @@ export function TopBar({
   slotsTotal,
   overallStatus,
   reduceMotion,
+  pollStatus,
 }: {
   now: Date;
   hubName: string;
@@ -20,6 +22,7 @@ export function TopBar({
   slotsTotal: number;
   overallStatus: Status;
   reduceMotion: boolean;
+  pollStatus: PollStatus;
 }) {
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-plane/92 backdrop-blur-sm">
@@ -58,11 +61,27 @@ export function TopBar({
         <div className="ml-auto flex flex-wrap items-center gap-3.5">
           <StatusPill status={overallStatus} label={overallStatus === "good" ? "NOMINAL" : overallStatus.toUpperCase()} />
           <div className="flex items-center gap-2 font-mono text-[13px] tracking-[0.02em] text-ink">
-            <span
-              className={`h-[7px] w-[7px] rounded-full bg-teal shadow-[0_0_0_3px_rgba(43,214,164,0.18)] ${
-                reduceMotion ? "" : "animate-pulse"
-              }`}
-            />
+            {/* Live indicator dot */}
+            {pollStatus === "live" && (
+              <span
+                title="Live — polling every 30 s"
+                className={`h-[7px] w-[7px] rounded-full bg-teal shadow-[0_0_0_3px_rgba(43,214,164,0.18)] ${
+                  reduceMotion ? "" : "animate-pulse"
+                }`}
+              />
+            )}
+            {pollStatus === "connecting" && (
+              <span
+                title="Fetching latest data…"
+                className="h-[7px] w-[7px] rounded-full bg-ink-muted animate-pulse"
+              />
+            )}
+            {pollStatus === "error" && (
+              <span
+                title="Poll failed — showing last known data"
+                className="h-[7px] w-[7px] rounded-full bg-warning"
+              />
+            )}
             <span>{fmtClock(now)}</span>
             <span className="text-[11px] text-ink-muted">{fmtDateLabel(now)}</span>
           </div>
