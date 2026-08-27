@@ -115,38 +115,45 @@ export async function fetchLiveSeedData(): Promise<SeedData> {
 
     const modules: Module[] = modulesData.map((m: any) => {
       const p = plugins.find((pl: any) => pl.slug === m.plugin_slug);
+      const seedMod = seed.modules.find((sm) => sm.slug === m.plugin_slug || sm.id === m.id);
       
       const modReadings = readings
         .filter((r: any) => r.module_id === m.id)
         .slice(0, 30)
         .reverse();
 
-      const latestReading = modReadings.length > 0 ? modReadings[modReadings.length - 1].value : 0;
+      const latestReading =
+        modReadings.length > 0
+          ? modReadings[modReadings.length - 1].value
+          : seedMod?.latest ?? 0;
       
-      const series: SeriesPoint[] = modReadings.map((r: any) => ({
-        t: r.recorded_at,
-        v: r.value,
-      }));
+      const series: SeriesPoint[] =
+        modReadings.length > 0
+          ? modReadings.map((r: any) => ({
+              t: r.recorded_at,
+              v: r.value,
+            }))
+          : seedMod?.series ?? [];
 
       return {
         id: m.id,
         slug: m.plugin_slug,
-        label: m.label,
-        slot: m.slot,
-        sensor_chip: p?.sensor_chip || "",
-        metric_key: p?.metric_key || "",
-        unit: p?.unit || "",
-        author: p?.author || "",
-        status: m.status as Status,
+        label: m.label || seedMod?.label || m.plugin_slug,
+        slot: m.slot || p?.target_slot || seedMod?.slot || "A1",
+        sensor_chip: p?.sensor_chip || seedMod?.sensor_chip || "",
+        metric_key: p?.metric_key || seedMod?.metric_key || "",
+        unit: p?.unit || seedMod?.unit || "",
+        author: p?.author || seedMod?.author || "nodeframe-core",
+        status: (m.status as Status) || seedMod?.status || "good",
         latest: latestReading,
         thresholds: {
-          warn_above: p?.warn_above,
-          crit_above: p?.crit_above,
-          warn_below: p?.warn_below,
-          crit_below: p?.crit_below,
+          warn_above: p?.warn_above ?? seedMod?.thresholds?.warn_above,
+          crit_above: p?.crit_above ?? seedMod?.thresholds?.crit_above,
+          warn_below: p?.warn_below ?? seedMod?.thresholds?.warn_below,
+          crit_below: p?.crit_below ?? seedMod?.thresholds?.crit_below,
         },
         series,
-        connected_at: m.connected_at,
+        connected_at: m.connected_at || new Date().toISOString(),
       };
     });
 

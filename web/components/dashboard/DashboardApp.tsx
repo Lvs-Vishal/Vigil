@@ -190,14 +190,28 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
 
     // Push to database
     if (supabaseClient) {
-      supabaseClient.from("modules").insert({
-        id: `mod-${plugin.slug}-${Date.now()}`,
-        plugin_slug: plugin.slug,
-        label: plugin.name,
-        slot: plugin.target_slot || "B2",
-        status: "good",
-        connected_at: new Date().toISOString(),
-      }).then();
+      const modId = `mod-${plugin.slug}-${Date.now()}`;
+      supabaseClient
+        .from("modules")
+        .insert({
+          id: modId,
+          plugin_slug: plugin.slug,
+          label: plugin.name,
+          slot: plugin.target_slot || "B2",
+          status: "good",
+          connected_at: new Date().toISOString(),
+        })
+        .then(() => {
+          if (plugin.metric_key) {
+            supabaseClient.from("readings").insert({
+              module_id: modId,
+              metric_key: plugin.metric_key,
+              value: 0,
+              unit: plugin.unit || "",
+              recorded_at: new Date().toISOString(),
+            }).then();
+          }
+        });
     }
   }
 
@@ -221,7 +235,24 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
 
     // Delete from database
     if (supabaseClient) {
-      supabaseClient.from("modules").delete().eq("plugin_slug", plugin.slug).then();
+      supabaseClient
+        .from("modules")
+        .select("id")
+        .eq("plugin_slug", plugin.slug)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            const ids = data.map((m) => m.id);
+            supabaseClient
+              .from("readings")
+              .delete()
+              .in("module_id", ids)
+              .then(() => {
+                supabaseClient.from("modules").delete().eq("plugin_slug", plugin.slug).then();
+              });
+          } else {
+            supabaseClient.from("modules").delete().eq("plugin_slug", plugin.slug).then();
+          }
+        });
     }
   }
 

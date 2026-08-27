@@ -189,7 +189,9 @@ export function HubBuilder() {
     // Generate fake data in Supabase if connected
     if (supabaseClient) {
       try {
-        // Clear old modules (this cascades to readings and events if DB setup properly, or we can just delete modules)
+        // Clear old readings and events first to prevent Foreign Key errors
+        await supabaseClient.from("readings").delete().gt("id", 0);
+        await supabaseClient.from("events").delete().gt("id", 0);
         await supabaseClient.from("modules").delete().neq("id", "0");
         
         const nowMs = Date.now();
@@ -200,7 +202,7 @@ export function HubBuilder() {
             id: `mod-${pluginSlug}-${nowMs}`,
             plugin_slug: pluginSlug,
             label: plugin?.name || pluginSlug,
-            slot: `A${index + 1}`,
+            slot: plugin?.target_slot || `A${index + 1}`,
             status: "good",
             connected_at: new Date().toISOString(),
           };
@@ -209,23 +211,38 @@ export function HubBuilder() {
         if (modulesToInsert.length > 0) {
           await supabaseClient.from("modules").insert(modulesToInsert);
 
-          // Generate fake historical readings (last 30 minutes, 1 per minute)
+          // Generate readings with required metric_key and unit
           const readingsToInsert: any[] = [];
           for (const mod of modulesToInsert) {
             let baseValue = 50;
-            if (mod.plugin_slug === "temperature") baseValue = 25;
-            if (mod.plugin_slug === "ambient-light") baseValue = 400;
-            if (mod.plugin_slug === "gas-level") baseValue = 150;
-            if (mod.plugin_slug === "proximity") baseValue = 80;
-            
-            for (let i = 30; i >= 0; i--) {
-              const noise = (Math.random() - 0.5) * (baseValue * 0.1);
-              readingsToInsert.push({
-                module_id: mod.id,
-                value: baseValue + noise,
-                recorded_at: new Date(nowMs - i * 60000).toISOString(),
-              });
+            let metricKey = "value";
+            let unit = "";
+
+            if (mod.plugin_slug === "temperature") {
+              baseValue = 25;
+              metricKey = "temperature";
+              unit = "°C";
+            } else if (mod.plugin_slug === "ambient-light") {
+              baseValue = 400;
+              metricKey = "lux";
+              unit = "lux";
+            } else if (mod.plugin_slug === "gas-level") {
+              baseValue = 150;
+              metricKey = "gas_ppm";
+              unit = "ppm";
+            } else if (mod.plugin_slug === "proximity") {
+              baseValue = 80;
+              metricKey = "distance_cm";
+              unit = "cm";
             }
+
+            readingsToInsert.push({
+              module_id: mod.id,
+              metric_key: metricKey,
+              value: baseValue,
+              unit: unit,
+              recorded_at: new Date().toISOString(),
+            });
           }
           await supabaseClient.from("readings").insert(readingsToInsert);
         }
