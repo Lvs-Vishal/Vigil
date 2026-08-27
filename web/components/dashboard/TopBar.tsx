@@ -14,6 +14,7 @@ export function TopBar({
   overallStatus,
   reduceMotion,
   pollStatus,
+  dbStatus,
 }: {
   now: Date;
   hubName: string;
@@ -23,6 +24,7 @@ export function TopBar({
   overallStatus: Status;
   reduceMotion: boolean;
   pollStatus: PollStatus;
+  dbStatus: "connected" | "offline";
 }) {
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-plane/92 backdrop-blur-sm">
@@ -61,7 +63,26 @@ export function TopBar({
         <div className="ml-auto flex flex-wrap items-center gap-3.5">
           <StatusPill status={overallStatus} label={overallStatus === "good" ? "NOMINAL" : overallStatus.toUpperCase()} />
           <div className="flex items-center gap-2 font-mono text-[13px] tracking-[0.02em] text-ink">
-            {/* Live indicator dot */}
+            {/* Supabase DB Connection Indicator */}
+            {dbStatus === "connected" ? (
+              <span
+                title="Supabase Connected (Real-time)"
+                className="inline-flex items-center gap-1.5 rounded-full border border-teal/40 bg-teal/10 px-2 py-0.5 text-[10px] tracking-[0.05em] text-teal uppercase"
+              >
+                <span className={`h-1.5 w-1.5 rounded-full bg-teal ${reduceMotion ? "" : "animate-pulse"}`} />
+                Supabase
+              </span>
+            ) : (
+              <span
+                title="Supabase Offline (Using local fallback or disconnected)"
+                className="inline-flex items-center gap-1.5 rounded-full border border-critical/40 bg-critical/10 px-2 py-0.5 text-[10px] tracking-[0.05em] text-critical uppercase"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-critical" />
+                Offline
+              </span>
+            )}
+            
+            {/* Live SWR indicator dot */}
             {pollStatus === "live" && (
               <span
                 title="Live — polling every 30 s"

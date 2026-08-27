@@ -148,6 +148,27 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
   const uptimeValue =
     loadedAt == null ? uptimeLabel(liveData.core.uptime_hours) : `${uptimeDays}d ${uptimeHrs}h`;
 
+  // ── Supabase Real-time Connection Status ───────────────────────────────────
+  const [dbStatus, setDbStatus] = useState<"connected" | "offline">(supabaseClient ? "connected" : "offline");
+
+  useEffect(() => {
+    if (!supabaseClient) {
+      setDbStatus("offline");
+      return;
+    }
+    const channel = supabaseClient.channel("system-ping");
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        setDbStatus("connected");
+      } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+        setDbStatus("offline");
+      }
+    });
+    return () => {
+      supabaseClient?.removeChannel(channel);
+    };
+  }, []);
+
   // ── Plugin install/uninstall handler ───────────────────────────────────────
   function handleInstall(plugin: MarketplacePlugin) {
     setLocalUninstalled((prev) => {
@@ -215,6 +236,7 @@ export function DashboardApp({ initialData }: { initialData: SeedData }) {
         overallStatus={overall}
         reduceMotion={reduceMotion}
         pollStatus={pollStatus}
+        dbStatus={dbStatus}
       />
 
       <div className="mx-auto w-full max-w-[1440px] flex-1 px-6 pb-16">

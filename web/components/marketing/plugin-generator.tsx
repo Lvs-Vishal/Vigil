@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface GenerateResult {
   slug: string;
+  instructions: string;
   generated_code: string;
   pr_url: string | null;
   branch?: string;
@@ -229,6 +230,17 @@ export function PluginGenerator() {
                 <span className="text-ink-muted">The generated code is still available below — copy it and open a PR manually.</span>
               </div>
             )}
+
+            {/* Instructions */}
+            <div className="mt-5 rounded-[10px] border border-border bg-surface-2 p-5 text-[13px] leading-[1.6]">
+              <h3 className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink">
+                Wiring Instructions
+              </h3>
+              <div className="whitespace-pre-wrap text-ink-secondary">
+                {result.instructions}
+              </div>
+            </div>
+
             <CodeBlock code={result.generated_code} slug={result.slug} />
 
             {/* Hardware safety reminder */}

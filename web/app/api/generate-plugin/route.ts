@@ -76,7 +76,15 @@ Here is the exact SensorPlugin base class you must inherit from:
 ${CPP_BASE_TEMPLATE}
 \`\`\`
 
-Now implement the class described by the user. Output ONLY the C++ implementation file — no explanations, no markdown.`;
+Now implement the class described by the user. You must structure your entire response using the following XML format:
+
+<instructions>
+Provide clear, step-by-step wiring instructions for the user here. Tell them exactly which ESP32 GPIO pins to connect to which sensor pins, following the hardware safety rules. Keep it concise.
+</instructions>
+
+<code>
+// Put your complete C++ implementation here (NO markdown fences, NO prose).
+</code>`;
 }
 
 // ── Slug extractor ───────────────────────────────────────────────────────────
@@ -144,6 +152,13 @@ async function createGitHubPR(
   return { pr_url: pr.html_url, branch };
 }
 
+// ── XML Extractor helpers ───────────────────────────────────────────────────
+function extractTag(text: string, tag: string): string {
+  const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, "i");
+  const match = text.match(regex);
+  return match?.[1]?.trim() ?? "";
+}
+
 // ── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -170,34 +185,78 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── LLM call ────────────────────────────────────────────────────────────
-  const openai = new OpenAI({ apiKey: openaiKey });
+  let rawOutput: string;
 
-  let generatedCode: string;
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      temperature: 0.2,  // Low temperature for deterministic, correct C++.
-      max_tokens: 2048,
-      messages: [
-        { role: "system", content: buildSystemPrompt() },
-        { role: "user", content: prompt },
-      ],
-    });
+  // Mock mode for local testing without an API key
+  if (openaiKey === "your_actual_openai_key_here") {
+    // Simulate LLM delay
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    rawOutput = `
+<instructions>
+**Wiring Instructions for Mock Sensor:**
+1. Connect **VCC** to the ESP32 **3.3V** rail (Red wire).
+2. Connect **GND** to any ESP32 **GND** pin (Black wire).
+3. Connect **DATA** to **GPIO 4** (Yellow wire).
+*Note: Do not use strapping pins (0, 2, 5, 12, 15).*
+</instructions>
 
-    generatedCode = completion.choices[0]?.message?.content?.trim() ?? "";
-    if (!generatedCode) {
-      throw new Error("Model returned an empty response.");
+<code>
+#pragma once
+#include <Arduino.h>
+
+class MockSensorPlugin : public SensorPlugin {
+private:
+  float _value = 0.0f;
+  unsigned long _lastMs = 0;
+  unsigned long _interval = 2000;
+public:
+  bool begin() override { return true; }
+  void update() override {
+    if (millis() - _lastMs > _interval) {
+      _value = 42.0f; // mock reading
+      _lastMs = millis();
     }
+  }
+  float getValue() const override { return _value; }
+  const char* getUnit() const override { return "mock"; }
+  const char* getLabel() const override { return "Mock Sensor"; }
+  const char* getSlug() const override { return "mock-sensor"; }
+};
+</code>
+    `.trim();
+  } else {
+    // ── Real LLM call ────────────────────────────────────────────────────────────
+    const openai = new OpenAI({ apiKey: openaiKey });
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        temperature: 0.2,  // Low temperature for deterministic, correct C++.
+        max_tokens: 2048,
+        messages: [
+          { role: "system", content: buildSystemPrompt() },
+          { role: "user", content: prompt },
+        ],
+      });
 
-    // Strip accidental markdown fences the model sometimes emits despite instructions.
-    generatedCode = generatedCode
+      rawOutput = completion.choices[0]?.message?.content?.trim() ?? "";
+      if (!rawOutput) {
+        throw new Error("Model returned an empty response.");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "OpenAI request failed.";
+      return NextResponse.json({ error: `LLM error: ${message}` }, { status: 502 });
+    }
+  }
+
+  const instructions = extractTag(rawOutput, "instructions") || "No wiring instructions provided.";
+  let generatedCode = extractTag(rawOutput, "code");
+
+  // Fallback if the LLM ignored XML tags
+  if (!generatedCode) {
+    generatedCode = rawOutput
       .replace(/^```(?:cpp|c\+\+)?\n?/im, "")
       .replace(/```\s*$/im, "")
       .trim();
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "OpenAI request failed.";
-    return NextResponse.json({ error: `LLM error: ${message}` }, { status: 502 });
   }
 
   const slug = extractSlug(generatedCode);
@@ -215,6 +274,7 @@ export async function POST(req: NextRequest) {
       const { pr_url, branch } = await createGitHubPR(slug, generatedCode);
       return NextResponse.json({
         slug,
+        instructions,
         generated_code: generatedCode,
         pr_url,
         branch,
@@ -225,6 +285,7 @@ export async function POST(req: NextRequest) {
       const ghError = err instanceof Error ? err.message : "GitHub PR creation failed.";
       return NextResponse.json({
         slug,
+        instructions,
         generated_code: generatedCode,
         pr_url: null,
         github_error: ghError,
@@ -235,6 +296,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     slug,
+    instructions,
     generated_code: generatedCode,
     pr_url: null,
     github_enabled: false,

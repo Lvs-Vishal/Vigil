@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { AiWiringGuide } from "./ai-wiring-guide";
+import { supabaseClient } from "@/lib/supabase";
+import { seed } from "@/lib/data";
 
 // ── Sensor catalogue ─────────────────────────────────────────────────────────
 
@@ -168,12 +170,69 @@ export function HubBuilder() {
     setShowGuide(false);
   }
 
-  function handleGenerate() {
+  // Map HubBuilder sensor IDs to seed-data plugin slugs
+  const SENSOR_TO_SLUG: Record<SensorId, string> = {
+    dht11: "temperature",
+    mq6: "gas-level",
+    hcsr04: "proximity",
+    tcs34725: "ambient-light",
+    mfrc522: "access-control",
+  };
+
+  async function handleGenerate() {
     setShowGuide(true);
     // Scroll to guide after a paint frame.
     requestAnimationFrame(() => {
       document.getElementById("wiring-guide")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+
+    // Generate fake data in Supabase if connected
+    if (supabaseClient) {
+      try {
+        // Clear old modules (this cascades to readings and events if DB setup properly, or we can just delete modules)
+        await supabaseClient.from("modules").delete().neq("id", "0");
+        
+        const nowMs = Date.now();
+        const modulesToInsert = selected.map((sId, index) => {
+          const pluginSlug = SENSOR_TO_SLUG[sId];
+          const plugin = seed.marketplace.find((p) => p.slug === pluginSlug);
+          return {
+            id: `mod-${pluginSlug}-${nowMs}`,
+            plugin_slug: pluginSlug,
+            label: plugin?.name || pluginSlug,
+            slot: `A${index + 1}`,
+            status: "good",
+            connected_at: new Date().toISOString(),
+          };
+        });
+
+        if (modulesToInsert.length > 0) {
+          await supabaseClient.from("modules").insert(modulesToInsert);
+
+          // Generate fake historical readings (last 30 minutes, 1 per minute)
+          const readingsToInsert: any[] = [];
+          for (const mod of modulesToInsert) {
+            let baseValue = 50;
+            if (mod.plugin_slug === "temperature") baseValue = 25;
+            if (mod.plugin_slug === "ambient-light") baseValue = 400;
+            if (mod.plugin_slug === "gas-level") baseValue = 150;
+            if (mod.plugin_slug === "proximity") baseValue = 80;
+            
+            for (let i = 30; i >= 0; i--) {
+              const noise = (Math.random() - 0.5) * (baseValue * 0.1);
+              readingsToInsert.push({
+                module_id: mod.id,
+                value: baseValue + noise,
+                recorded_at: new Date(nowMs - i * 60000).toISOString(),
+              });
+            }
+          }
+          await supabaseClient.from("readings").insert(readingsToInsert);
+        }
+      } catch (err) {
+        console.warn("Failed to push hub builder config to Supabase", err);
+      }
+    }
   }
 
   return (
