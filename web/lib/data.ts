@@ -117,8 +117,10 @@ export async function fetchLiveSeedData(): Promise<SeedData> {
       const p = plugins.find((pl: any) => pl.slug === m.plugin_slug);
       const seedMod = seed.modules.find((sm) => sm.slug === m.plugin_slug || sm.id === m.id);
       
+      const targetMetricKey = p?.metric_key || seedMod?.metric_key || "";
+
       const modReadings = readings
-        .filter((r: any) => r.module_id === m.id)
+        .filter((r: any) => r.module_id === m.id && (!targetMetricKey || r.metric_key === targetMetricKey))
         .slice(0, 30)
         .reverse();
 
